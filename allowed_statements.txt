@@ -1,0 +1,18 @@
+Defining C functions should be allowed
+Recursion should be allowed
+
+pointers to functions/variables should be allowed
+
+Allowed syscalls and such
+
+malloc
+write
+read
+sleep
+getrandom
+
+Allow arrays
+
+NO ASM STATEMENTS OR COMPILER DIRECTIVES
+
+The problem should have constraints
