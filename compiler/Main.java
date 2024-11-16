@@ -28,6 +28,10 @@ public class Main{
         // simplify the representation
         Simplifier simplifier = new Simplifier(tokens);
         tokens = simplifier.tokens;
+
+        // conver the representation to IR
+        Converter converter = new Converter(tokens);
+        tokens = converter.tokens;
     }
 
     public static void debug(String message){
