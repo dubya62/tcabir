@@ -57,7 +57,7 @@ public class Lexer{
         ArrayList<String> result = new ArrayList<>();
 
         // create a set of break chars
-        Character[] breakCharCollection = {'~', '!', '#', '%', '^', '&', '*', '(', ')', '-', '+', '=', '{', '}', '[', ']', '|', '\'', '"', ';', ':', '/', '?', '.', ',', '<', '>', '\n', '\t', '\\'};
+        Character[] breakCharCollection = {'~', '!', '#', '%', '^', '&', '*', '(', ')', '-', '+', '=', '{', '}', '[', ']', '|', '\'', '"', ';', ':', '/', '?', '.', ',', '<', '>', '\n', '\t', '\\', ' '};
 
         Set<Character> breakChars = new HashSet<>();
         breakChars.addAll(Arrays.asList(breakCharCollection));
@@ -65,7 +65,9 @@ public class Lexer{
         String curr = "";
         for (int i=0; i<theFile.length(); i++){
             if (breakChars.contains(theFile.charAt(i))){
-                result.add(curr);
+                if (curr.length() > 0){
+                    result.add(curr);
+                }
                 result.add("" + theFile.charAt(i));
                 curr = "";
             } else {

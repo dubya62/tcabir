@@ -23,7 +23,11 @@ public class Main{
 
         // normalize the tokens in the file to a simpler version
         Normalizer normalizer = new Normalizer(tokens);
+        tokens = normalizer.tokens;
 
+        // simplify the representation
+        Simplifier simplifier = new Simplifier(tokens);
+        tokens = simplifier.tokens;
     }
 
     public static void debug(String message){
