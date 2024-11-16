@@ -27,8 +27,8 @@ public class Simplifier{
     }
 
     /**
-     * Create extra scopes around if, for, switch, and while
-     * so that initializers
+     * Create extra scopes around for and function definitions
+     * so that initializers are within their own scope
      */ 
     private ArrayList<String> createExtraScopes(ArrayList<String> tokens){
         ArrayList<String> result = new ArrayList<>();
@@ -54,6 +54,85 @@ public class Simplifier{
             result.add(tokens.get(i));
         }
 
+        result = createExtraFunctionScopes(result);
+
+        return result;
+    }
+
+    /**
+     * Create extra scopes around functions
+     */
+    private ArrayList<String> createExtraFunctionScopes(ArrayList<String> tokens){
+        ArrayList<String> result = new ArrayList<>();
+
+        String[] builtinTypes = {"int", "char", "short", "long", "float", "double", "void", "*", "[", "]"};
+        Set<String> builtinSet = new HashSet<>();
+        builtinSet.addAll(Arrays.asList(builtinTypes));
+            
+        for (int i=0; i<tokens.size(); i++){
+            // if this is a builtin type
+            // followed by a variable
+            // followed by stuff in parenthesis
+            // followed by { or ;
+            int startingIndex = i;
+            int typeCount = 0;
+            while (i < tokens.size() && builtinSet.contains(tokens.get(i))){
+                typeCount++;
+                i++;
+            }
+            if (typeCount > 0){
+            } else {
+                i = startingIndex;
+                result.add(tokens.get(i));
+                continue;
+            }
+            if (i < tokens.size() && !builtinSet.contains(tokens.get(i))){
+                i++;
+            } else {
+                i = startingIndex;
+                result.add(tokens.get(i));
+                continue;
+            }
+            int openParens = 0;
+            if (i < tokens.size() && tokens.get(i).equals("(")){
+            } else {
+                i = startingIndex;
+                result.add(tokens.get(i));
+                continue;
+            }
+            while (i < tokens.size()){
+                if (tokens.get(i).equals("(")){
+                    openParens++;
+                } else if (tokens.get(i).equals(")")){
+                    openParens--;
+                    if (openParens == 0){
+                        i++;
+                        break;
+                    }
+                }
+                i++;
+            }
+            if (i < tokens.size() && (tokens.get(i).equals(";") || tokens.get(i).equals("{"))){
+                // add a { before everything
+                result.add("{");
+                int openBraces = 0;
+                while (i < tokens.size()){
+                    if (tokens.get(i).equals("{")){
+                        openBraces++;
+                    } else if (tokens.get(i).equals("}")){
+                        openBraces--;
+                        if (openBraces == 0){
+                            tokens.add(i, "}");
+                            break;
+                        }
+                    }
+                    i++;
+                }
+            }
+            i = startingIndex;
+            result.add(tokens.get(i));
+        }
+
         return result;
     }
 
@@ -67,7 +146,7 @@ public class Simplifier{
         int currentScope = 0;
 
         // keep track of which tokens are builtins and should not be replaced
-        String[] builtinArray = {"*", "char", "int", "float", "double", "+", "-", "(", ")", ".", "[", "]", "{", "}", "<", ">", ",", "/", "=", "|", "%", "#", "!", "~", "^", "&", ";", ":", "return", "break", "void", "if", "else", "for", "while", "switch", "case", "short", "long", "const", "unsigned", "struct", "NULL", "signed", "sizeof"};
+        String[] builtinArray = {"*", "char", "int", "float", "double", "+", "-", "(", ")", ".", "[", "]", "{", "}", "<", ">", ",", "/", "=", "|", "%", "#", "!", "~", "^", "&", ";", ":", "return", "break", "void", "if", "else", "for", "while", "switch", "case", "short", "long", "const", "unsigned", "struct", "NULL", "signed", "sizeof", "size_t", "ssize_t", "getrandom", "malloc", "free", "read", "write", "sleep", "time"};
 
         Set<String> builtins = new HashSet<>();
         builtins.addAll(Arrays.asList(builtinArray));

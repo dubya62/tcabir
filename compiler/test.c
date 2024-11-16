@@ -1,14 +1,19 @@
 /**
  * Return the number of times that <letter> appears in <str>
  */
-int main(int argc, char** argv){
-    int c = 2;
-    if (argc > 0){
-        int b = 3;
-        printf("%s: %d: %d", argv[0], b, c);
-    } else {
-        int b = 4;
-        b <<= 2;
-        c >>= 1;
+int getNumberOfOccurances(char* str, char letter){
+
+    char* test[5] = {};
+
+    int count = 0;
+    int i=0;
+    while (1){
+        if (str[i] == '\0'){
+            break;
+        } else if (str[i] == letter){
+            count++;
+        }
+        i++;
     }
+    return count;
 }

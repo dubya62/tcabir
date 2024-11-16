@@ -29,9 +29,13 @@ public class Main{
         Simplifier simplifier = new Simplifier(tokens);
         tokens = simplifier.tokens;
 
-        // conver the representation to IR
+        // convert the representation to IR
         Converter converter = new Converter(tokens);
         tokens = converter.tokens;
+
+        // figure out the types of each variable and remove declarations
+        TypeChecker typeChecker = new TypeChecker(tokens);
+        tokens = typeChecker.tokens;
     }
 
     public static void debug(String message){
