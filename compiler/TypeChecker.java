@@ -39,8 +39,15 @@ public class TypeChecker{
         Set<String> builtins = new HashSet<>();
         builtins.addAll(Arrays.asList(builtinArray));
 
+        int varNameIndex; 
+
         for (int i=0; i<tokens.size(); i++){
+            varNameIndex = i;
             if (builtins.contains(tokens.get(i))){
+                if (i+1 < tokens.size() && (tokens.get(i+1).equals(")") || tokens.get(i+1).equals(","))){
+                    resultTokens.add(tokens.get(i));
+                    continue;
+                }
                 // the next value is what is being typed
                 int startingIndex = i;
                 String resultingType = tokens.get(i);
@@ -55,6 +62,7 @@ public class TypeChecker{
                     i++;
                 }
                 String varName = tokens.get(i);
+                varNameIndex = i;
                 if (i < tokens.size()){
                     if (result.containsKey(tokens.get(i))){
                         System.out.println("ERROR: multiple declarations of " + tokens.get(i));
@@ -80,9 +88,21 @@ public class TypeChecker{
                         result.put(varName, resultingType);
                     }
                 }
+            } else if (tokens.get(i).equals("struct")){
+                if (i+2 < tokens.size()){
+                    if (!tokens.get(i+2).equals("{")){
+                        result.put(tokens.get(i+2), tokens.get(i) + tokens.get(i+1));
+                        i+=2;
+                        varNameIndex = i;
+                    } else {
+                        result.put(tokens.get(i+1), tokens.get(i));
+                        i++;
+                        varNameIndex = i;
+                    }
+                }
             }
             
-            resultTokens.add(tokens.get(i));
+            resultTokens.add(tokens.get(varNameIndex));
         }
 
         this.tokens = resultTokens;
