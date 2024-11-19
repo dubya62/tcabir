@@ -28,6 +28,7 @@ public class Main{
         // simplify the representation
         Simplifier simplifier = new Simplifier(tokens);
         tokens = simplifier.tokens;
+        int finalVarnum = simplifier.finalVarnum;
 
         // convert the representation to IR
         Converter converter = new Converter(tokens);
@@ -38,7 +39,7 @@ public class Main{
         tokens = typeChecker.tokens;
 
         // inline all functions
-        Inliner inliner = new Inliner(tokens);
+        Inliner inliner = new Inliner(tokens, finalVarnum);
         tokens = inliner.tokens;
 
         // Ignore unnecessary operations

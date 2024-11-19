@@ -13,6 +13,9 @@ public class Converter{
         Main.debug("Starting the converter...");
         this.tokens = tokens;
 
+        // convert else if(){} into else { if(){} }
+        this.tokens = convertElseIfs(this.tokens);
+
         // Convert breaks into jumps to the end of loops
         this.tokens = convertBreaks(this.tokens);
 
@@ -25,6 +28,44 @@ public class Converter{
         Main.debug("Converter Finished!");
         Main.debug("Converter output:");
         Main.debug(this.tokens.toString());
+    }
+
+    private ArrayList<String> convertElseIfs(ArrayList<String> tokens){
+        ArrayList<String> result = new ArrayList<>();
+
+        for (int i=0; i<tokens.size(); i++){
+            if (tokens.get(i).equals("else")){
+                int startingIndex = i;
+                if (i+1 < tokens.size()){
+                    if (tokens.get(i+1).equals("if")){
+                        result.add(tokens.get(i));
+                        result.add("{");
+                        i++;
+                        int openBraces = 0;
+                        while (i < tokens.size()){
+                            if (tokens.get(i).equals("{")){
+                                openBraces++;
+                            } else if (tokens.get(i).equals("}")){
+                                openBraces--;
+                                if (openBraces == 0 && !(i+1 < tokens.size() && tokens.get(i+1).equals("else"))){
+                                    tokens.add(i, "}");
+                                    break;
+                                }
+                            }
+                            
+                            i++;
+                        }
+
+                        i = startingIndex+1;
+
+                    }
+                }
+            }
+            result.add(tokens.get(i));
+
+        }
+
+        return result;
     }
 
     private ArrayList<String> convertBreaks(ArrayList<String> tokens){

@@ -10,6 +10,7 @@ import java.util.HashMap;
 
 public class Simplifier{
     public ArrayList<String> tokens;
+    public int finalVarnum;
 
     public Simplifier(ArrayList<String> tokens){
         Main.debug("Starting the Simplifier...");
@@ -206,6 +207,8 @@ public class Simplifier{
                 result.add(currentString);
             }
         }
+
+        this.finalVarnum = varnum;
 
         return result;
     }
