@@ -3,15 +3,9 @@
  */
 
 int getNumberOfOccurances(char* str, char letter){
-    int a = 0;
-    a &&= 1;
-    a ||= 1;
-
-    a |= 2;
-
-    a->b = 2;
-
-    a -= 2;
+    if (a < 20){
+        print(a);
+    }
 
 }
 

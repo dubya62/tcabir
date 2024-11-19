@@ -2,6 +2,9 @@
  * The purpose of this file is to inline all functions and convert recursive functions into iterative versions
  */
 import java.util.ArrayList;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Arrays;
 
 public class Inliner{
     public ArrayList<String> tokens;
@@ -117,14 +120,63 @@ public class Inliner{
         return result;
     }
 
+
+
     private ArrayList<String> breakOperations(ArrayList<String> tokens){
         ArrayList<String> result = new ArrayList<>();
 
         // make sure that there is at most 1 operation per line
+        String[] operators = {"~", "!", "%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "+=", "/=", "*=", "<=", ">=", "!=", "==", "%=", "^=", "&=", "|=", "~=", "-=", "->", "&&", "||", "&&=", "||=", "."};
+        Set<String> operatorsSet = new HashSet<>();
+        operatorsSet.addAll(Arrays.asList(operators));
         
         // break stuff out of if statements
         for (int i=0; i<tokens.size(); i++){
             if (tokens.get(i).equals("if")){
+                ArrayList<String> betweenParenthesis = new ArrayList<>();
+                // get tokens between the parenthesis
+                if (i+1 < tokens.size() && tokens.get(i+1).equals("(")){
+                    i += 2;
+                    int openParens = 1;
+                    while (i < tokens.size()){
+                        if (tokens.get(i).equals("(")){
+                            openParens++;
+                        } else if (tokens.get(i).equals(")")){
+                            openParens--;
+                            if (openParens == 0){
+                                break;
+                            }
+                        }
+                        betweenParenthesis.add(tokens.get(i));
+                        i++;
+                    }
+                }
+                int endParenths = i;
+
+                // see if there are more than one operator/function call
+                int numOperators = 0;
+                for (int j=0; j<betweenParenthesis.size(); j++){
+                    if (operatorsSet.contains(betweenParenthesis.get(j))){
+                        // this is an operator
+                        numOperators++;
+                    }
+                }
+
+                // we need to break this line out
+                if (numOperators > 0){
+                    result.add("#" + this.finalVarnum);
+                    result.add("=");
+                    for (int j=0; j<betweenParenthesis.size(); j++){
+                        result.add(betweenParenthesis.get(j));
+                    }
+                    result.add(";");
+                    result.add("if");
+                    result.add("(");
+                    result.add("#" + this.finalVarnum);
+                    this.finalVarnum++;
+                    i = endParenths;
+                }
+
             }
             result.add(tokens.get(i));
         }
