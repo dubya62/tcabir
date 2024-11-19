@@ -36,6 +36,14 @@ public class Main{
         // figure out the types of each variable and remove declarations
         TypeChecker typeChecker = new TypeChecker(tokens);
         tokens = typeChecker.tokens;
+
+        // inline all functions
+        Inliner inliner = new Inliner(tokens);
+        tokens = inliner.tokens;
+
+        // Ignore unnecessary operations
+        Ignorer ignorer = new Ignorer(tokens);
+        tokens = ignorer.tokens;
     }
 
     public static void debug(String message){

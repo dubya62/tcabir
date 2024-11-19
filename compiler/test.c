@@ -2,7 +2,6 @@
  * Return the number of times that <letter> appears in <str>
  */
 
-
 struct TestStruct{
     int test1;
     int test2;
@@ -24,6 +23,7 @@ int getNumberOfOccurances(char* str, char letter){
             count++;
         }
         i++;
+        continue;
     }
     return count;
 }

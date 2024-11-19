@@ -1,7 +1,7 @@
 
 TESTFILE := test.c
 
-Main: Main.class Lexer.class Normalizer.class Simplifier.class Converter.class TypeChecker.class
+Main: Main.class Lexer.class Normalizer.class Simplifier.class Converter.class TypeChecker.class Ignorer.class
 	java $@ $(TESTFILE)
 
 %.class: %.java

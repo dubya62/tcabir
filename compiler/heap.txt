@@ -1,0 +1,42 @@
+[32k, 64k, 128k, 256k, 512k, 1m, 2m, 4m, 8m, 16m, 32m, 64m, 128m, 256m, 512m, 1g]
+
+if heap is needed, first 32k is allocated as static
+
+[0x7fff, NULL, NULL, NULL, NULL]
+
+Need to keep track of free blocks of memory
+
+32k of memory:
+[||||||||||||] [0;32k]
+allocate 1024 bytes at base index
+[..||||||||||] [1024;31k]
+allocate 1024 bytes at next index
+[....||||||||] [2048;30k]
+free first allocation
+[||..||||||||] [0;1k, 2048;30k]
+
+on free of second allocation, combine it with one before and one after
+
+Each free region structure should contain:
+    index
+    size
+
+
+
+when allocating:
+    1. find block with enough free space to allocate
+    2. fragment the allocation table
+
+when freeing:
+    if previous block is allocated:
+        add to freed blocks
+    else: 
+        increase size of previous free block by this block's size
+
+    if next block is allocated:
+        nothing special
+    else:
+        increase size of this free block by the next block's size
+
+
+

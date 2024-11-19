@@ -3,6 +3,7 @@
  * to the IR
  */
 import java.util.ArrayList;
+import java.util.Stack;
 
 public class Converter{
     public ArrayList<String> tokens;
@@ -11,6 +12,9 @@ public class Converter{
     public Converter(ArrayList<String> tokens){
         Main.debug("Starting the converter...");
         this.tokens = tokens;
+
+        // Convert breaks into jumps to the end of loops
+        this.tokens = convertBreaks(this.tokens);
 
         // Convert while loops to if statements and jumps
         this.tokens = convertWhileLoops(this.tokens);
@@ -21,6 +25,44 @@ public class Converter{
         Main.debug("Converter Finished!");
         Main.debug("Converter output:");
         Main.debug(this.tokens.toString());
+    }
+
+    private ArrayList<String> convertBreaks(ArrayList<String> tokens){
+        ArrayList<String> result = new ArrayList<>();
+
+        Stack<Integer> braceLevels = new Stack<>();
+        int openBraces = 0;
+
+        for (int i=0; i<tokens.size(); i++){
+
+            if (tokens.get(i).equals("for")){
+                braceLevels.push(openBraces);
+            } else if (tokens.get(i).equals("while")){
+                braceLevels.push(openBraces);
+            } else if (tokens.get(i).equals("switch")){
+                braceLevels.push(openBraces);
+            } else if (tokens.get(i).equals("{")){
+                openBraces++;
+            } else if (tokens.get(i).equals("}")){
+                openBraces--;
+
+                if (!braceLevels.empty() && openBraces == braceLevels.peek()){
+                    braceLevels.pop();
+                    result.add("}");
+                    result.add("@" + currentLabel);
+                    result.add(":");
+                    currentLabel++;
+                    continue;
+                }
+            } else if (tokens.get(i).equals("break")){
+                result.add("jmp");
+                result.add("" + (currentLabel));
+                continue;
+            } 
+            result.add(tokens.get(i));
+        }
+
+        return result;
     }
 
     private ArrayList<String> convertWhileLoops(ArrayList<String> tokens){

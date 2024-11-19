@@ -146,7 +146,7 @@ public class Simplifier{
         int currentScope = 0;
 
         // keep track of which tokens are builtins and should not be replaced
-        String[] builtinArray = {"*", "char", "int", "float", "double", "+", "-", "(", ")", ".", "[", "]", "{", "}", "<", ">", ",", "/", "=", "|", "%", "#", "!", "~", "^", "&", ";", ":", "return", "break", "void", "if", "else", "for", "while", "switch", "case", "short", "long", "const", "unsigned", "struct", "NULL", "signed", "sizeof", "size_t", "ssize_t", "getrandom", "malloc", "free", "read", "write", "sleep", "time"};
+        String[] builtinArray = {"*", "char", "int", "float", "double", "+", "-", "(", ")", ".", "[", "]", "{", "}", "<", ">", ",", "/", "=", "|", "%", "#", "!", "~", "^", "&", ";", ":", "return", "break", "void", "if", "else", "for", "while", "switch", "case", "short", "long", "const", "unsigned", "struct", "NULL", "signed", "sizeof", "size_t", "ssize_t", "getrandom", "malloc", "free", "read", "write", "sleep", "time", "continue"};
 
         Set<String> builtins = new HashSet<>();
         builtins.addAll(Arrays.asList(builtinArray));
