@@ -22,6 +22,9 @@ public class Simplifier{
         // convert all variables into numbered variables
         this.tokens = generalizeVariables(this.tokens);
 
+        // fix the function scoping
+        this.tokens = fixExtraScopes(this.tokens);
+
         Main.debug("Simplifier Finsihed!");
         Main.debug("Simplifier output:");
         Main.debug(this.tokens.toString());
@@ -103,6 +106,11 @@ public class Simplifier{
             }
             while (i < tokens.size()){
                 if (tokens.get(i).equals("(")){
+                    if (openParens == 0){
+                        // add { before parenthesis
+                        tokens.add(i, "{");
+                        i++;
+                    }
                     openParens++;
                 } else if (tokens.get(i).equals(")")){
                     openParens--;
@@ -114,8 +122,6 @@ public class Simplifier{
                 i++;
             }
             if (i < tokens.size() && (tokens.get(i).equals(";") || tokens.get(i).equals("{"))){
-                // add a { before everything
-                result.add("{");
                 int openBraces = 0;
                 while (i < tokens.size()){
                     if (tokens.get(i).equals("{")){
@@ -133,6 +139,49 @@ public class Simplifier{
             i = startingIndex;
             result.add(tokens.get(i));
         }
+
+        return result;
+    }
+
+
+    private ArrayList<String> fixExtraScopes(ArrayList<String> tokens){
+        // move the { after a function's name to before it
+        ArrayList<String> result = new ArrayList<>();
+
+        String[] builtinTypes = {"int", "char", "short", "long", "float", "double", "void", "*", "[", "]"};
+        Set<String> builtinSet = new HashSet<>();
+        builtinSet.addAll(Arrays.asList(builtinTypes));
+
+        System.out.println(tokens.toString());
+
+        for (int i=0; i<tokens.size(); i++){
+            if (builtinSet.contains(tokens.get(i))){
+                ArrayList<String> types = new ArrayList<>();
+                while (i < tokens.size() && builtinSet.contains(tokens.get(i))){
+                    types.add(tokens.get(i));
+                    i++;
+                }
+                if (i+1 < tokens.size()){
+                    if (tokens.get(i).length() > 0 && tokens.get(i).charAt(0) == '#'){
+                        if (tokens.get(i+1).equals("{")){
+                            result.add("{");
+                            for (int j=0; j<types.size(); j++){
+                                result.add(types.get(j));
+                            }
+                            result.add(tokens.get(i));
+                            i+=1;
+                            continue;
+                        }
+                    }
+                }
+
+                for (int j=0; j<types.size(); j++){
+                    result.add(types.get(j));
+                }
+            }
+            result.add(tokens.get(i));
+        }
+
 
         return result;
     }

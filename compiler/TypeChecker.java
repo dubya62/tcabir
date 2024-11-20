@@ -86,6 +86,7 @@ public class TypeChecker{
                         }
 
                         result.put(varName, resultingType);
+                        resultTokens.add("def");
                     }
                 }
             } else if (tokens.get(i).equals("struct")){
@@ -99,6 +100,7 @@ public class TypeChecker{
                         i++;
                         varNameIndex = i;
                     }
+                    resultTokens.add("def");
                 }
             }
             

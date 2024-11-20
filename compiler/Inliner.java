@@ -129,6 +129,7 @@ public class Inliner{
         result = breakOperationsFromReturns(result);
         
         // break stuff out of function calls
+        result = breakOperationsFromFunctionCalls(result);
         
         // break stuff out of normal lines
 
@@ -178,6 +179,7 @@ public class Inliner{
 
                 // we need to break this line out
                 if (numOperators > 0){
+                    result.add("def");
                     result.add("#" + this.finalVarnum);
                     result.add("=");
                     for (int j=0; j<betweenParenthesis.size(); j++){
@@ -232,6 +234,7 @@ public class Inliner{
                 }
 
                 if (operatorCount > 0){
+                    result.add("def");
                     result.add("#" + this.finalVarnum);
                     result.add("=");
                     for (int j=0; j<betweenStatements.size(); j++){
@@ -249,6 +252,122 @@ public class Inliner{
                     i = startingIndex;
                 }
             }
+            result.add(tokens.get(i));
+        }
+
+        return result;
+    }
+
+
+    private ArrayList<String> breakOperationsFromFunctionCalls(ArrayList<String> tokens){
+        ArrayList<String> result = new ArrayList<>();
+
+        String[] operators = {"~", "!", "%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "+=", "/=", "*=", "<=", ">=", "!=", "==", "%=", "^=", "&=", "|=", "~=", "-=", "->", "&&", "||", "&&=", "||=", ".", "("};
+        Set<String> operatorsSet = new HashSet<>();
+        operatorsSet.addAll(Arrays.asList(operators));
+
+        ArrayList<String> newArgs = new ArrayList<>();
+
+        for (int i=0; i < tokens.size(); i++){
+            // need (not def)(variable_name)(...)
+            if (tokens.get(i).length() > 0){
+                if (tokens.get(i).charAt(0) == '#'){
+                    if (i > 0){
+                        if (!tokens.get(i-1).equals("def")){
+                            if (i+1 < tokens.size() && tokens.get(i+1).equals("(")){
+                                int placePoint = i;
+                                while (placePoint > 0){
+                                    if (tokens.get(placePoint).equals(";") || tokens.get(placePoint).equals("{")){
+                                        placePoint++;
+                                        break;
+                                    }
+                                    placePoint--;
+                                }
+
+                                // stuff inside the parenthesis are the arguments
+                                int startingIndex = i;
+                                i++;
+                                int openParens = 0;
+                                ArrayList<String> currentArg = new ArrayList<>();
+                                while (i < tokens.size()){
+                                    if (tokens.get(i).equals("(")){
+                                        openParens++;
+                                        if (openParens == 1){
+                                            i++;
+                                            continue;
+                                        }
+                                    } else if ((tokens.get(i).equals(",") || tokens.get(i).equals(")")) && openParens == 1){
+                                        // this breaks up args
+                                        // if there are any operators, replace this arg with new token
+                                        int numOperators = 0;
+                                        for (int j=0; j<currentArg.size(); j++){
+                                            if (operatorsSet.contains(currentArg.get(j))){
+                                                numOperators++;
+                                            }
+                                        }
+                                        
+                                        if (numOperators > 0){
+                                            currentArg.add(0, "=");
+                                            currentArg.add(0, "#" + this.finalVarnum);
+                                            currentArg.add(0, "def");
+                                            newArgs.add("#" + this.finalVarnum);
+                                            this.finalVarnum++;
+                                            currentArg = breakOperationsFromFunctionCalls(currentArg);
+                                            for (int j=0; j<currentArg.size(); j++){
+                                                result.add(placePoint, currentArg.get(j));
+                                                placePoint++;
+                                            }
+                                            result.add(placePoint, ";");
+                                            placePoint++;
+                                        } else {
+                                            for (int j=0; j<currentArg.size(); j++){
+                                                newArgs.add(currentArg.get(j));
+                                            }
+                                        }
+
+
+                                        currentArg = new ArrayList<>();
+
+                                        if (tokens.get(i).equals(")")){
+                                            break;
+                                        }
+                                        i++;
+                                        continue;
+                                    } else if (tokens.get(i).equals(")")){
+                                        openParens--;
+                                        if (openParens == 0){
+                                            break;
+                                        }
+                                    }
+
+                                    currentArg.add(tokens.get(i));
+
+                                    i++;
+                                }
+                                int finalIndex = i+1;
+                                i = startingIndex;
+
+                                result.add(tokens.get(i));
+                                result.add("(");
+                                for (int j=0; j < newArgs.size(); j++){
+                                    if (j != 0){
+                                        result.add(",");
+                                    }
+                                    result.add(newArgs.get(j));
+                                }
+                                result.add(")");
+                                i = finalIndex;
+
+                                if (finalIndex >= tokens.size()){
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+
             result.add(tokens.get(i));
         }
 

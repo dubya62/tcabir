@@ -2,13 +2,17 @@
  * Return the number of times that <letter> appears in <str>
  */
 
-int getNumberOfOccurances(char* str, char letter){
-    if (a < 20){
-        print(a);
-    }
+struct TestStruct{
+    int b;
+}
 
+int getNumberOfOccurances(char* str, char letter){
+    int b = 2;
+    return b + 3;
 }
 
 int main(void){
-    return getNumberOfOccurances("asdf", 'a');
+
+    int c = getNumberOfOccurances("asdf" + "bcd", join('a' + 'c'));
+    return c;
 }
