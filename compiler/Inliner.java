@@ -121,12 +121,26 @@ public class Inliner{
     }
 
 
-
     private ArrayList<String> breakOperations(ArrayList<String> tokens){
+        // break stuff from if statements
+        ArrayList<String> result = breakOperationsFromIfs(tokens);
+
+        // break stuff out of return statements
+        result = breakOperationsFromReturns(result);
+        
+        // break stuff out of function calls
+        
+        // break stuff out of normal lines
+
+        return result;
+    }
+    
+
+    private ArrayList<String> breakOperationsFromIfs(ArrayList<String> tokens){
         ArrayList<String> result = new ArrayList<>();
 
         // make sure that there is at most 1 operation per line
-        String[] operators = {"~", "!", "%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "+=", "/=", "*=", "<=", ">=", "!=", "==", "%=", "^=", "&=", "|=", "~=", "-=", "->", "&&", "||", "&&=", "||=", "."};
+        String[] operators = {"~", "!", "%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "+=", "/=", "*=", "<=", ">=", "!=", "==", "%=", "^=", "&=", "|=", "~=", "-=", "->", "&&", "||", "&&=", "||=", ".", "("};
         Set<String> operatorsSet = new HashSet<>();
         operatorsSet.addAll(Arrays.asList(operators));
         
@@ -181,11 +195,62 @@ public class Inliner{
             result.add(tokens.get(i));
         }
 
-        // break stuff out of return statements
-        
-        // break stuff out of function calls
-        
-        // break stuff out of normal lines
+
+        return result;
+    }
+
+
+    private ArrayList<String> breakOperationsFromReturns(ArrayList<String> tokens){
+        ArrayList<String> result = new ArrayList<>();
+
+        // make sure that there is at most 1 operation per line
+        String[] operators = {"~", "!", "%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "+=", "/=", "*=", "<=", ">=", "!=", "==", "%=", "^=", "&=", "|=", "~=", "-=", "->", "&&", "||", "&&=", "||=", ".", "("};
+        Set<String> operatorsSet = new HashSet<>();
+        operatorsSet.addAll(Arrays.asList(operators));
+
+        for (int i=0; i<tokens.size(); i++){
+            if (tokens.get(i).equals("return")){
+                // get the tokens between return and ;
+                ArrayList<String> betweenStatements = new ArrayList<>();
+                i++;
+                int startingIndex = i;
+                while (i < tokens.size()){
+                    if (tokens.get(i).equals(";")){
+                        break;
+                    }
+                    betweenStatements.add(tokens.get(i));
+                    i++;
+                }
+                int finalIndex = i;
+
+                // if there are any operators, move to the line before
+                int operatorCount = 0;
+                for (int j=0; j<betweenStatements.size(); j++){
+                    if (operatorsSet.contains(betweenStatements.get(j))){
+                        operatorCount++;
+                    }
+                }
+
+                if (operatorCount > 0){
+                    result.add("#" + this.finalVarnum);
+                    result.add("=");
+                    for (int j=0; j<betweenStatements.size(); j++){
+                        result.add(betweenStatements.get(j));
+                    }
+                    result.add(";");
+                    result.add("return");
+                    result.add("#" + this.finalVarnum);
+                    result.add(";");
+
+                    this.finalVarnum++;
+                    i = finalIndex+1;
+                } else {
+                    result.add("return");
+                    i = startingIndex;
+                }
+            }
+            result.add(tokens.get(i));
+        }
 
         return result;
     }
@@ -266,3 +331,5 @@ public class Inliner{
         return result;
     }
 }
+
+

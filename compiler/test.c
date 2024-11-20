@@ -10,5 +10,5 @@ int getNumberOfOccurances(char* str, char letter){
 }
 
 int main(void){
-    return 0;
+    return getNumberOfOccurances("asdf", 'a');
 }
