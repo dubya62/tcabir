@@ -132,6 +132,7 @@ public class Inliner{
         result = breakOperationsFromFunctionCalls(result);
         
         // break stuff out of normal lines
+        result = breakMultipleOperations(result);
 
         return result;
     }
@@ -206,7 +207,7 @@ public class Inliner{
         ArrayList<String> result = new ArrayList<>();
 
         // make sure that there is at most 1 operation per line
-        String[] operators = {"~", "!", "%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "+=", "/=", "*=", "<=", ">=", "!=", "==", "%=", "^=", "&=", "|=", "~=", "-=", "->", "&&", "||", "&&=", "||=", ".", "("};
+        String[] operators = {"~", "!", "%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "+=", "/=", "*=", "<=", ">=", "!=", "==", "%=", "^=", "&=", "|=", "~=", "-=", "->", "&&", "||", "&&=", "||=", ".", "(", "["};
         Set<String> operatorsSet = new HashSet<>();
         operatorsSet.addAll(Arrays.asList(operators));
 
@@ -262,7 +263,7 @@ public class Inliner{
     private ArrayList<String> breakOperationsFromFunctionCalls(ArrayList<String> tokens){
         ArrayList<String> result = new ArrayList<>();
 
-        String[] operators = {"~", "!", "%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "+=", "/=", "*=", "<=", ">=", "!=", "==", "%=", "^=", "&=", "|=", "~=", "-=", "->", "&&", "||", "&&=", "||=", ".", "("};
+        String[] operators = {"~", "!", "%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "+=", "/=", "*=", "<=", ">=", "!=", "==", "%=", "^=", "&=", "|=", "~=", "-=", "->", "&&", "||", "&&=", "||=", ".", "(", "["};
         Set<String> operatorsSet = new HashSet<>();
         operatorsSet.addAll(Arrays.asList(operators));
 
@@ -375,15 +376,54 @@ public class Inliner{
     }
 
 
+    /**
+     * Break up normal lines that have more than one operation using operator precedence
+     */
+    private ArrayList<String> breakMultipleOperations(ArrayList<String> tokens){
+        // first, convert unary tokens to binary
+
+
+
+
+        // FIXME: return result;
+        return tokens;
+    }
+
+
     private ArrayList<String> convertReturns(ArrayList<String> tokens){
         ArrayList<String> result = new ArrayList<>();
 
         // add an argument to each function that is a pointer to the return type
 
         for (int i=0; i<tokens.size(); i++){
+            if (tokens.get(i).equals("def")){
+                if (i+2 < tokens.size() && tokens.get(i+1).length() > 0 && tokens.get(i+1).charAt(0) == '#'){
+                    if (tokens.get(i+2).equals("(")){
+                        result.add(tokens.get(i));
+                        result.add(tokens.get(i+1));
+                        result.add(tokens.get(i+2));
+                        result.add("def");
+                        result.add("#" + this.finalVarnum);
+                        // TODO: make type of this variable a pointer to the return type
+                        if (i+3 < tokens.size() && !tokens.get(i+3).equals(")")){
+                            result.add(",");
+                        }
+                        i += 2;
+                        int returnIndex = i;
+
+                        // TODO: look for all returns inside this function and replace
+                        //      return x;
+                        // WITH:
+                        //      *returnVar = x
+                        //      return;
+
+                        this.finalVarnum++;
+                        continue;
+                    }
+                }
+            }
             result.add(tokens.get(i));
         }
-        // instead of 
 
         return result;
     }
