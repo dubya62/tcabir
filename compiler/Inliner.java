@@ -56,14 +56,17 @@ public class Inliner{
         //
         // &&=
         // ||=
+        //
+        // <<
+        // >>
+        // <<=
+        // >>=
         
         for (int i=0; i<tokens.size(); i++){
             switch (tokens.get(i)){
                 case "+":
                 case "/":
                 case "*":
-                case "<":
-                case ">":
                 case "!":
                 case "=":
                 case "%":
@@ -88,6 +91,8 @@ public class Inliner{
                     }
                     result.add(tokens.get(i));
                     break;
+                case "<":
+                case ">":
                 case "&":
                 case "|":
                     if (i+1 < tokens.size()){
@@ -117,6 +122,29 @@ public class Inliner{
 
         }
 
+        result = convertPrefixAndPostfix(result);
+
+        return result;
+    }
+
+
+    private ArrayList<String> convertPrefixAndPostfix(ArrayList<String> tokens){
+        ArrayList<String> result = new ArrayList<>();
+
+        // combine the tokens
+        for (int i=0; i<tokens.size(); i++){
+            if (tokens.get(i).equals("-") || tokens.get(i).equals("+")){
+                if (i+1 < tokens.size()){
+                    if (tokens.get(i).equals(tokens.get(i+1))){
+                        result.add(tokens.get(i) + tokens.get(i+1));
+                        i++;
+                        continue;
+                    }
+                }
+            }
+            result.add(tokens.get(i));
+        }
+
         return result;
     }
 
@@ -130,9 +158,132 @@ public class Inliner{
         
         // break stuff out of function calls
         result = breakOperationsFromFunctionCalls(result);
+
+        // convert unary operators to binary
+        result = convertUnaryOperators(result);
+        result = convertCallsAndAccesses(result);
         
         // break stuff out of normal lines
-        result = breakMultipleOperations(result);
+        //result = breakMultipleOperations(result);
+
+        return result;
+    }
+
+    
+    private ArrayList<String> convertUnaryOperators(ArrayList<String> tokens){
+        ArrayList<String> result = new ArrayList<>();
+
+        // unary operators:
+        // * - 0 deref
+        // & - 0 ref
+        // ! - 0 lognot
+        // ~ - 0 bitnot
+        // - - 0 -
+        String[] unaryOperators = {"*", "&", "!", "~", "-", "++", "--"};
+        Set<String> unaryOperatorsSet = new HashSet<>();
+        unaryOperatorsSet.addAll(Arrays.asList(unaryOperators));
+        
+        String[] operators = {"~", "!", "%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "+=", "/=", "*=", "<=", ">=", "!=", "==", "%=", "^=", "&=", "|=", "~=", "-=", "->", "&&", "||", "&&=", "||=", ".", "(", "[", ">>", "<<", "<<=", ">>=", "=", ";", "++", "--"};
+        Set<String> operatorsSet = new HashSet<>();
+        operatorsSet.addAll(Arrays.asList(operators));
+
+        for (int i=0; i<tokens.size(); i++){
+            // find unary operators
+            if (unaryOperatorsSet.contains(tokens.get(i))){
+                // if the thing before this is an operator, this is unary
+                if (tokens.get(i).equals("++") || tokens.get(i).equals("--")){
+                    if (i > 0 && tokens.get(i-1).length() > 0 && tokens.get(i-1).charAt(0) == '#'){
+                        // postfix
+                        result.add(tokens.get(i));
+                        result.add("0");
+                    } else {
+                        // prefix
+                        result.add("0");
+                        result.add(tokens.get(i));
+                    }
+                    continue;
+                } else if (i > 0 && operatorsSet.contains(tokens.get(i-1))){
+                    result.add("0");
+                    switch(tokens.get(i)){
+                        case "*":
+                            result.add("deref");
+                            break;
+                        case "&":
+                            result.add("ref");
+                            break;
+                        case "!":
+                            result.add("lognot");
+                            break;
+                        case "~":
+                            result.add("bitnot");
+                            break;
+                        case "-":
+                            result.add("-");
+                            break;
+                    }
+                    continue;
+                }
+            }
+
+            result.add(tokens.get(i));
+        }
+
+        return result;
+    }
+
+    private ArrayList<String> convertCallsAndAccesses(ArrayList<String> tokens){
+        ArrayList<String> result = new ArrayList<>();
+
+        String[] operators = {"~", "!", "%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "+=", "/=", "*=", "<=", ">=", "!=", "==", "%=", "^=", "&=", "|=", "~=", "-=", "->", "&&", "||", "&&=", "||=", ".", "(", "[", ">>", "<<", "<<=", ">>=", "=", "deref", "ref", "lognot", "bitnot"};
+        Set<String> operatorsSet = new HashSet<>();
+        operatorsSet.addAll(Arrays.asList(operators));
+
+        // () - call
+        // [] - access
+
+        for (int i=0; i<tokens.size(); i++){
+            if (tokens.get(i).equals("(") || tokens.get(i).equals("[")){
+                // token before needs to be a var
+                if (i > 0){
+                    if (tokens.get(i-1).length() > 0 && tokens.get(i-1).charAt(0) == '#'){
+                        // cannot be a definition
+                        if (i-1 > 0 && tokens.get(i-2).equals("def")){
+                        } else {
+                            switch(tokens.get(i)){
+                                case "(":
+                                    result.add("call");
+                                    break;
+                                case "[":
+                                    result.add("access");
+                                    // replace the [ with (
+                                    tokens.set(i, "(");
+                                    int returnIndex = i;
+                                    int openBrackets = 1;
+                                    while (i < tokens.size()){
+                                        if (tokens.get(i).equals("[")){
+                                            openBrackets++;
+                                        } else if (tokens.get(i).equals("]")){
+                                            openBrackets--;
+                                            if (openBrackets == 0){
+                                                tokens.set(i, ")");
+                                                break;
+                                            }
+                                        }
+                                        i++;
+                                    }
+                                    i = returnIndex;
+                                    break;
+                            }
+
+
+                        }
+
+                    }
+                }
+            }
+
+            result.add(tokens.get(i));
+        }
 
         return result;
     }
@@ -142,7 +293,7 @@ public class Inliner{
         ArrayList<String> result = new ArrayList<>();
 
         // make sure that there is at most 1 operation per line
-        String[] operators = {"~", "!", "%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "+=", "/=", "*=", "<=", ">=", "!=", "==", "%=", "^=", "&=", "|=", "~=", "-=", "->", "&&", "||", "&&=", "||=", ".", "("};
+        String[] operators = {"~", "!", "%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "+=", "/=", "*=", "<=", ">=", "!=", "==", "%=", "^=", "&=", "|=", "~=", "-=", "->", "&&", "||", "&&=", "||=", ".", "(", "[", ">>", "<<", "<<=", ">>=", "="};
         Set<String> operatorsSet = new HashSet<>();
         operatorsSet.addAll(Arrays.asList(operators));
         
@@ -207,7 +358,7 @@ public class Inliner{
         ArrayList<String> result = new ArrayList<>();
 
         // make sure that there is at most 1 operation per line
-        String[] operators = {"~", "!", "%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "+=", "/=", "*=", "<=", ">=", "!=", "==", "%=", "^=", "&=", "|=", "~=", "-=", "->", "&&", "||", "&&=", "||=", ".", "(", "["};
+        String[] operators = {"~", "!", "%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "+=", "/=", "*=", "<=", ">=", "!=", "==", "%=", "^=", "&=", "|=", "~=", "-=", "->", "&&", "||", "&&=", "||=", ".", "(", "[", ">>", "<<", "<<=", ">>=", "="};
         Set<String> operatorsSet = new HashSet<>();
         operatorsSet.addAll(Arrays.asList(operators));
 
@@ -263,7 +414,7 @@ public class Inliner{
     private ArrayList<String> breakOperationsFromFunctionCalls(ArrayList<String> tokens){
         ArrayList<String> result = new ArrayList<>();
 
-        String[] operators = {"~", "!", "%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "+=", "/=", "*=", "<=", ">=", "!=", "==", "%=", "^=", "&=", "|=", "~=", "-=", "->", "&&", "||", "&&=", "||=", ".", "(", "["};
+        String[] operators = {"~", "!", "%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "+=", "/=", "*=", "<=", ">=", "!=", "==", "%=", "^=", "&=", "|=", "~=", "-=", "->", "&&", "||", "&&=", "||=", ".", "(", "[", ">>", "<<", "<<=", ">>=", "="};
         Set<String> operatorsSet = new HashSet<>();
         operatorsSet.addAll(Arrays.asList(operators));
 
@@ -380,13 +531,17 @@ public class Inliner{
      * Break up normal lines that have more than one operation using operator precedence
      */
     private ArrayList<String> breakMultipleOperations(ArrayList<String> tokens){
-        // first, convert unary tokens to binary
+        ArrayList<String> result = new ArrayList<>();
+
+        String[] operators = {"~", "!", "%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "+=", "/=", "*=", "<=", ">=", "!=", "==", "%=", "^=", "&=", "|=", "~=", "-=", "->", "&&", "||", "&&=", "||=", ".", "(", "[", ">>", "<<", "<<=", ">>=", "=", "deref", "ref", "lognot", "bitnot", "call", "access", "++", "--"};
+        Set<String> operatorsSet = new HashSet<>();
+        operatorsSet.addAll(Arrays.asList(operators));
+
+        // TODO: 
+        // Create a HashMap with each operator's precedence for ordering
 
 
-
-
-        // FIXME: return result;
-        return tokens;
+        return result;
     }
 
 
