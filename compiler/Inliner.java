@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Arrays;
+import java.util.HashMap;
 
 public class Inliner{
     public ArrayList<String> tokens;
@@ -162,9 +163,114 @@ public class Inliner{
         // convert unary operators to binary
         result = convertUnaryOperators(result);
         result = convertCallsAndAccesses(result);
+
+        // convert assigment operations to assignment and the operation
+        result = convertAssignmentOperations(result);
+
+        // convert -> to *.
+        result = convertArrowOperator(result);
         
         // break stuff out of normal lines
         //result = breakMultipleOperations(result);
+
+        return result;
+    }
+
+
+    private ArrayList<String> convertAssignmentOperations(ArrayList<String> tokens){
+        ArrayList<String> result = new ArrayList<>();
+
+        String[] operators = {"%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "+=", "/=", "*=", "<=", ">=", "!=", "==", "%=", "^=", "&=", "|=", "~=", "-=", "->", "&&", "||", "&&=", "||=", ".", ">>", "<<", "<<=", ">>=", "=", "deref", "ref", "lognot", "bitnot", "call", "access", "pre++", "pre--", "post++", "post--"};
+        Set<String> operatorsSet = new HashSet<>();
+        operatorsSet.addAll(Arrays.asList(operators));
+
+
+        for (int i=0; i<tokens.size(); i++){
+            switch(tokens.get(i)){
+                case "+=":
+                case "/=":
+                case "*=":
+                case "%=":
+                case "^=":
+                case "&=":
+                case "|=":
+                case "~=":
+                case "-=":
+                case "&&=":
+                case "||=":
+                case "<<=":
+                case ">>=":
+                    ArrayList<String> before = new ArrayList<>();
+                    int returnIndex = i;
+                    while (i > 0){
+                        if (tokens.get(i).equals("{") || tokens.get(i).equals(";")){
+                            i++;
+                            break;
+                        }
+                        i--;
+                    }
+                    while (i < returnIndex){
+                        before.add(tokens.get(i));
+                        i++;
+                    }
+
+                    System.out.println(before.toString());
+
+                    result.add("=");
+                    for (int j=0; j<before.size(); j++){
+                        result.add(before.get(j));
+                    }
+
+                    // add the operation
+                    if (tokens.get(i).length() > 0){
+                        result.add(tokens.get(i).substring(0, tokens.get(i).length()-1));
+                    } else {
+                        System.out.println("Something is seriously wrong here...");
+                        System.exit(1);
+                    }
+
+                    result.add("(");
+                    returnIndex = i;
+                    while (i < tokens.size()){
+                        if (tokens.get(i).equals(";")){
+                            break;
+                        }
+                        i++;
+                    }
+                    tokens.add(i, ")");
+                    i = returnIndex+1;
+            }
+            result.add(tokens.get(i));
+        }
+
+        return result;
+    }
+
+    private ArrayList<String> convertArrowOperator(ArrayList<String> tokens){
+        ArrayList<String> result = new ArrayList<>();
+
+        String[] operators = {"%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "<=", ">=", "!=", "==", "->", "&&", "||", ".", ">>", "<<", "=", "deref", "ref", "lognot", "bitnot", "call", "access", "pre++", "pre--", "post++", "post--"};
+        Set<String> operatorsSet = new HashSet<>();
+        operatorsSet.addAll(Arrays.asList(operators));
+
+        String[] higherPrecedence = {"post++", "post--", "call", "access", "."};
+        Set<String> higherPrecedenceSet = new HashSet<>();
+        higherPrecedenceSet.addAll(Arrays.asList(higherPrecedence));
+
+        for (int i=0; i<tokens.size(); i++){
+            if (tokens.get(i).equals("->")){
+                // go backwards until reaching something with lower precedence
+                
+                // abc->def->ghi
+                // (*(*abc).def).ghi
+                
+                // TODO: go backwards and put (* where needed
+
+                result.add(")");
+                result.add(".");
+            }
+            result.add(tokens.get(i));
+        }
 
         return result;
     }
@@ -194,12 +300,12 @@ public class Inliner{
                 if (tokens.get(i).equals("++") || tokens.get(i).equals("--")){
                     if (i > 0 && tokens.get(i-1).length() > 0 && tokens.get(i-1).charAt(0) == '#'){
                         // postfix
-                        result.add(tokens.get(i));
+                        result.add("post" + tokens.get(i));
                         result.add("0");
                     } else {
                         // prefix
                         result.add("0");
-                        result.add(tokens.get(i));
+                        result.add("pre" + tokens.get(i));
                     }
                     continue;
                 } else if (i > 0 && operatorsSet.contains(tokens.get(i-1))){
@@ -234,7 +340,7 @@ public class Inliner{
     private ArrayList<String> convertCallsAndAccesses(ArrayList<String> tokens){
         ArrayList<String> result = new ArrayList<>();
 
-        String[] operators = {"~", "!", "%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "+=", "/=", "*=", "<=", ">=", "!=", "==", "%=", "^=", "&=", "|=", "~=", "-=", "->", "&&", "||", "&&=", "||=", ".", "(", "[", ">>", "<<", "<<=", ">>=", "=", "deref", "ref", "lognot", "bitnot"};
+        String[] operators = {"~", "!", "%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "+=", "/=", "*=", "<=", ">=", "!=", "==", "%=", "^=", "&=", "|=", "~=", "-=", "->", "&&", "||", "&&=", "||=", ".", "(", "[", ">>", "<<", "<<=", ">>=", "=", "deref", "ref", "lognot", "bitnot", "pre++", "pre--", "post++", "post--"};
         Set<String> operatorsSet = new HashSet<>();
         operatorsSet.addAll(Arrays.asList(operators));
 
@@ -533,13 +639,68 @@ public class Inliner{
     private ArrayList<String> breakMultipleOperations(ArrayList<String> tokens){
         ArrayList<String> result = new ArrayList<>();
 
-        String[] operators = {"~", "!", "%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "+=", "/=", "*=", "<=", ">=", "!=", "==", "%=", "^=", "&=", "|=", "~=", "-=", "->", "&&", "||", "&&=", "||=", ".", "(", "[", ">>", "<<", "<<=", ">>=", "=", "deref", "ref", "lognot", "bitnot", "call", "access", "++", "--"};
+        String[] operators = {"%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "+=", "/=", "*=", "<=", ">=", "!=", "==", "%=", "^=", "&=", "|=", "~=", "-=", "->", "&&", "||", "&&=", "||=", ".", ">>", "<<", "<<=", ">>=", "=", "deref", "ref", "lognot", "bitnot", "call", "access", "pre++", "pre--", "post++", "post--"};
         Set<String> operatorsSet = new HashSet<>();
         operatorsSet.addAll(Arrays.asList(operators));
 
         // TODO: 
         // Create a HashMap with each operator's precedence for ordering
+        HashMap<String, Integer> precedences = new HashMap();
+        precedences.put("post++", 1);
+        precedences.put("post--", 1);
+        precedences.put("call", 1);
+        precedences.put("access", 1);
+        precedences.put(".", 1);
+        precedences.put("->", 1);
 
+        precedences.put("pre++", 2);
+        precedences.put("pre--", 2);
+        precedences.put("lognot", 2);
+        precedences.put("bitnot", 2);
+        precedences.put("deref", 2);
+        precedences.put("ref", 2);
+
+        precedences.put("*", 3);
+        precedences.put("/", 3);
+        precedences.put("%", 3);
+
+        precedences.put("+", 4);
+        precedences.put("-", 4);
+
+        precedences.put("<<", 5);
+        precedences.put(">>", 5);
+
+        precedences.put("<", 6);
+        precedences.put("<=", 6);
+        precedences.put(">", 6);
+        precedences.put(">=", 6);
+
+        precedences.put("==", 7);
+        precedences.put("!=", 7);
+
+        precedences.put("&", 8);
+
+        precedences.put("^", 9);
+
+        precedences.put("|", 10);
+
+        precedences.put("&&", 11);
+
+        precedences.put("||", 12);
+
+        precedences.put("=", 14);
+        precedences.put("+=", 14);
+        precedences.put("-=", 14);
+        precedences.put("*=", 14);
+        precedences.put("/=", 14);
+        precedences.put("%=", 14);
+        precedences.put("<<=", 14);
+        precedences.put(">>=", 14);
+        precedences.put("&=", 14);
+        precedences.put("^=", 14);
+        precedences.put("|=", 14);
+
+        
 
         return result;
     }
