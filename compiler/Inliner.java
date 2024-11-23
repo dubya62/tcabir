@@ -169,9 +169,59 @@ public class Inliner{
 
         // convert -> to *.
         result = convertArrowOperator(result);
+
+        // remove prefix and postfix operators
+        result = removePrefixAndPostfix(result);
         
         // break stuff out of normal lines
         //result = breakMultipleOperations(result);
+        
+        /*
+         REMAINING OPERATIONS:
+        {"%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "<=", ">=", "!=", "==", "&&", "||", ".", ">>", "<<", "=", "deref", "ref", "lognot", "bitnot", "call", "access"};
+
+        remove <= and => and != using !(>), !(<), and !(==)
+        {"%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "==", "&&", "||", ".", ">>", "<<", "=", "deref", "ref", "lognot", "bitnot", "call", "access"};
+
+        remove || using  (a||b) = (!a && !b)
+        {"%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "==", "&&", ".", ">>", "<<", "=", "deref", "ref", "lognot", "bitnot", "call", "access"};
+
+        remove && using nested if statments
+        {"%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "==", ".", ">>", "<<", "=", "deref", "ref", "lognot", "bitnot", "call", "access"};
+
+        remove shifts using * and /
+        {"%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "==", ".", "=", "deref", "ref", "lognot", "bitnot", "call", "access"};
+
+        remove lognot using if/else statments
+        {"%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "==", ".", "=", "deref", "ref", "bitnot", "call", "access"};
+         
+        convert derefs to accesses
+        {"%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "==", ".", "=", "ref", "bitnot", "call", "access"};
+         
+         */
+
+        return result;
+    }
+
+    
+    // TODO: fix this. C acts weird when doing multiple pre/post fix operations in one line
+    private ArrayList<String> removePrefixAndPostfix(ArrayList<String> tokens){
+        ArrayList<String> result = new ArrayList<>();
+
+        String[] operators = {"%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "<=", ">=", "!=", "==", "&&", "||", ".", ">>", "<<", "=", "deref", "ref", "lognot", "bitnot", "call", "access", "pre++", "pre--", "post++", "post--"};
+        Set<String> operatorsSet = new HashSet<>();
+        operatorsSet.addAll(Arrays.asList(operators));
+
+        for (int i=0; i<tokens.size(); i++){
+            switch(tokens.get(i)){
+                case "pre++":
+                case "post++":
+                case "pre--":
+                case "post--":
+                    break;
+            }
+            result.add(tokens.get(i));
+        }
 
         return result;
     }
@@ -264,11 +314,49 @@ public class Inliner{
                 // abc->def->ghi
                 // (*(*abc).def).ghi
                 
-                // TODO: go backwards and put (* where needed
+                int returnIndex = i;
+                i--;
+                while (i > 0){
+                    if (!(higherPrecedenceSet.contains(tokens.get(i))) && !(tokens.get(i).length() > 0 && tokens.get(i).charAt(0) == '#')){
+                        // this is where the (* needs to go
+                        if (tokens.get(i).equals(")")){
+                            // go backwards until reaching the matching (
+                            int openParens = 0;
+                            while (i > 0){
+                                if (tokens.get(i).equals("(")){
+                                    openParens--;
+                                    if (openParens == 0){
+                                        break;
+                                    }
+                                } else if (tokens.get(i).equals(")")){
+                                    openParens++;
+                                }
 
-                result.add(")");
-                result.add(".");
+                                i--;
+                            }
+                            i--;
+                            continue;
+                        }
+                        break;
+                    }
+                    i--;
+                }
+                i++;
+                tokens.add(i, "deref");
+                tokens.add(i, "0");
+                tokens.add(i, "(");
+
+                i = returnIndex + 3;
+
+                tokens.add(i, ".");
+                tokens.add(i, ")");
+                i+=2;
+                tokens.remove(i);
+                continue;
             }
+        }
+
+        for (int i=0; i<tokens.size(); i++){
             result.add(tokens.get(i));
         }
 
