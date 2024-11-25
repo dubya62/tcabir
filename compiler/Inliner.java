@@ -216,135 +216,38 @@ public class Inliner{
     private ArrayList<String> removePrefixAndPostfix(ArrayList<String> tokens){
         ArrayList<String> result = new ArrayList<>();
 
-        String[] operators = {"%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "<=", ">=", "!=", "==", "&&", "||", ".", ">>", "<<", "=", "deref", "ref", "lognot", "bitnot", "call", "access", "pre++", "pre--", "post++", "post--"};
+        String[] operators = {"%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "<=", ">=", "!=", "==", "&&", "||", ".", ">>", "<<", "=", "deref", "ref", "lognot", "bitnot", "call", "access", "pre++", "pre--", "post++", "post--", ","};
         Set<String> operatorsSet = new HashSet<>();
         operatorsSet.addAll(Arrays.asList(operators));
 
+        int direction = 0;
+        boolean insideExpression = false;
+        int expressionStart = 0;
         for (int i=0; i<tokens.size(); i++){
-            ArrayList<String> variableName;
-            // on prefix, increment/decrement the value on line before
-            // on postfix, increment/decrement the value and use the original value
-            int direction = 0;
-            int openParens, openBrackets;
+            direction = 0;
             switch(tokens.get(i)){
+                case "StartExpression":
+                    expressionStart = i;
+                    insideExpression = true;
+                    break;
+                case "EndExpression":
+                    insideExpression = false;
+                    break;
+
                 case "pre++":
                     direction = 1;
                 case "pre--":
-                    // look backwards for the start of this line
-                    tokens.remove(i-1);
-                    tokens.remove(i-1);
-                    i--;
-                    int startingIndex = i;
-                    variableName = new ArrayList<>();
-                    openParens = 0;
-                    openBrackets = 0;
-                    while (i < tokens.size()){
-                        if (tokens.get(i).equals("(")){
-                            openParens++;
-                        } else if (tokens.get(i).equals(")")){
-                            openParens--;
-                        } else {
-                            if (variableName.size() == 0 || openParens > 0 || tokens.get(i).equals("call") || tokens.get(i).equals("access")){
-                                variableName.add(tokens.get(i));
-                            } else {
-                                break;
-                            }
-                        }
-                        i++;
+                    // if inside expression, perform operation before
+                    // TODO: finish this
+                    if (insideExpression){
+                        tokens.add(expressionStart, "");
+                        expressionStart++;
                     }
-
-                    System.out.println(variableName.toString());
-
-                    i = startingIndex;
-
-                    if (variableName.size() == 0){
-                        System.out.println("Expected variable after prefix operator");
-                        System.exit(1);
-                    }
-
-                    while (i > 0){
-                        if (tokens.get(i).equals("{") || tokens.get(i).equals(";")){
-                            i++;
-                            break;
-                        }
-                        i--;
-                    }
-                    for (int j=0; j<variableName.size(); j++){
-                        tokens.add(i, variableName.get(j));
-                        i++;
-                    }
-                    tokens.add(i, "=");
-                    i++;
-                    for (int j=0; j<variableName.size(); j++){
-                        tokens.add(i, variableName.get(j));
-                        i++;
-                    }
-                    
-                    if (direction == 1){
-                        tokens.add(i, "+");
-                    } else {
-                        tokens.add(i, "-");
-                    }
-                    i++;
-                    tokens.add(i, "1");
-                    i++;
-                    tokens.add(i, ";");
                     break;
                 case "post++":
                     direction = 1;
                 case "post--":
-                    // increment/decrement on line before, but replace with original
-                    tokens.remove(i);
-                    tokens.remove(i);
-                    i--;
-                    int returnIndex = i;
 
-                    variableName = new ArrayList<>();
-                    openParens = 0;
-                    boolean variableFound = false;
-                    while (i > 0){
-                        if (tokens.get(i).equals("(")){
-                            openParens--;
-                        } else if (tokens.get(i).equals(")")){
-                            openParens++;
-                        } else {
-                            if (variableFound == false || openParens > 0){
-                                variableName.add(tokens.get(i));
-                                if (tokens.get(i).length() > 0 && tokens.get(i).charAt(0) == '#'){
-                                    variableFound = true;
-                                    break;
-                                }
-                            } else {
-                                break;
-                            }
-                        }
-                        i--;
-                    }
-
-                    i = returnIndex;
-
-                    while (i > 0){
-                        if (tokens.get(i).equals("{") || tokens.get(i).equals(";")){
-                            i++;
-                            break;
-                        }
-                        i--;
-                    }
-                    tokens.add(i, "def");
-                    i++;
-                    tokens.add(i, "#" + this.finalVarnum);
-                    i++;
-                    tokens.add(i, "=");
-                    i++;
-                    for (int j=0; j<variableName.size(); j++){
-                       tokens.add(i, variableName.get(j));
-                        i++;
-                    }
-                    tokens.add(i, ";");
-                    i++;
-
-                    this.finalVarnum++;
-                   
 
                     break;
             }
@@ -894,9 +797,11 @@ public class Inliner{
             if (operatorCount > 2 || (operatorCount > 1 && wasNoEqual)){
                 // this line needs to be broken up
                 ArrayList<String> brokenLine = breakLineWithPostfix(currentLine);
+                result.add("StartExpression");
                 for (int j=0; j<brokenLine.size(); j++){
                     result.add(brokenLine.get(j));
                 }
+                result.add("EndExpression");
             } else {
                 for (int j=0; j<currentLine.size(); j++){
                     result.add(currentLine.get(j));
