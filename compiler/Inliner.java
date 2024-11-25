@@ -173,16 +173,19 @@ public class Inliner{
         // remove prefix and postfix operators
         result = removePrefixAndPostfix(result);
         
-        // break stuff out of normal lines
-        //result = breakMultipleOperations(result);
         
         /*
          REMAINING OPERATIONS:
         {"%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "<=", ">=", "!=", "==", "&&", "||", ".", ">>", "<<", "=", "deref", "ref", "lognot", "bitnot", "call", "access"};
+        */
 
+        /*
         remove <= and => and != using !(>), !(<), and !(==)
         {"%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "==", "&&", "||", ".", ">>", "<<", "=", "deref", "ref", "lognot", "bitnot", "call", "access"};
+        */
+        //result = removeOrEqualOperators(result);
 
+        /*
         remove || using  (a||b) = (!a && !b)
         {"%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "==", "&&", ".", ">>", "<<", "=", "deref", "ref", "lognot", "bitnot", "call", "access"};
 
@@ -200,6 +203,9 @@ public class Inliner{
          
          */
 
+        // break stuff out of normal lines
+        //result = breakMultipleOperations(result);
+
         return result;
     }
 
@@ -213,13 +219,76 @@ public class Inliner{
         operatorsSet.addAll(Arrays.asList(operators));
 
         for (int i=0; i<tokens.size(); i++){
+            // on prefix, increment/decrement the value on line before
+            // on postfix, increment/decrement the value and use the original value
             switch(tokens.get(i)){
                 case "pre++":
-                case "post++":
                 case "pre--":
+                    // look backwards for the start of this line
+                    tokens.remove(i-1);
+                    tokens.remove(i-1);
+                    i--;
+                    int startingIndex = i;
+                    ArrayList<String> variableName = new ArrayList<>();
+                    int openParens = 0;
+                    int openBrackets = 0;
+                    while (i < tokens.size()){
+                        if (tokens.get(i).equals("(")){
+                            openParens++;
+                        } else if (tokens.get(i).equals(")")){
+                            openParens--;
+                        } else if (tokens.get(i).equals("[")){
+                            openBrackets++;
+                        } else if (tokens.get(i).equals("[")){
+                            openBrackets--;
+                        } else {
+                            if (variableName.size() == 0 || openParens > 0 || openBrackets > 0){
+                                variableName.add(tokens.get(i));
+                            } else {
+                                break;
+                            }
+                        }
+                        i++;
+                    }
+
+                    System.out.println(variableName.toString());
+
+                    i = startingIndex;
+
+                    if (variableName.size() == 0){
+                        System.out.println("Expected variable after prefix operator");
+                        System.exit(1);
+                    }
+
+                    while (i > 0){
+                        if (tokens.get(i).equals("{") || tokens.get(i).equals(";")){
+                            i++;
+                            break;
+                        }
+                        i--;
+                    }
+                    for (int j=0; j<variableName.size(); j++){
+                        tokens.add(i, variableName.get(j));
+                        i++;
+                    }
+                    tokens.add(i, "=");
+                    i++;
+                    for (int j=0; j<variableName.size(); j++){
+                        tokens.add(i, variableName.get(j));
+                        i++;
+                    }
+                    tokens.add("+");
+                    System.out.println("HERE");
+                    i++;
+                    tokens.add("1");
+                    break;
+                case "post++":
                 case "post--":
                     break;
             }
+        }
+
+        for (int i=0; i<tokens.size(); i++){
             result.add(tokens.get(i));
         }
 
