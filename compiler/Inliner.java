@@ -6,6 +6,7 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Stack;
 
 public class Inliner{
     public ArrayList<String> tokens;
@@ -170,8 +171,12 @@ public class Inliner{
         // convert -> to *.
         result = convertArrowOperator(result);
 
+
+        // break up lines that have more than one operation on them
+        result = breakMultipleOperations(result);
+
         // remove prefix and postfix operators
-        result = removePrefixAndPostfix(result);
+        //result = removePrefixAndPostfix(result);
         
         
         /*
@@ -202,15 +207,10 @@ public class Inliner{
         {"%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "==", ".", "=", "ref", "bitnot", "call", "access"};
          
          */
-
-        // break stuff out of normal lines
-        //result = breakMultipleOperations(result);
-
         return result;
     }
 
     
-    // TODO: fix this. C acts weird when doing multiple pre/post fix operations in one line
     private ArrayList<String> removePrefixAndPostfix(ArrayList<String> tokens){
         ArrayList<String> result = new ArrayList<>();
 
@@ -219,30 +219,30 @@ public class Inliner{
         operatorsSet.addAll(Arrays.asList(operators));
 
         for (int i=0; i<tokens.size(); i++){
+            ArrayList<String> variableName;
             // on prefix, increment/decrement the value on line before
             // on postfix, increment/decrement the value and use the original value
+            int direction = 0;
+            int openParens, openBrackets;
             switch(tokens.get(i)){
                 case "pre++":
+                    direction = 1;
                 case "pre--":
                     // look backwards for the start of this line
                     tokens.remove(i-1);
                     tokens.remove(i-1);
                     i--;
                     int startingIndex = i;
-                    ArrayList<String> variableName = new ArrayList<>();
-                    int openParens = 0;
-                    int openBrackets = 0;
+                    variableName = new ArrayList<>();
+                    openParens = 0;
+                    openBrackets = 0;
                     while (i < tokens.size()){
                         if (tokens.get(i).equals("(")){
                             openParens++;
                         } else if (tokens.get(i).equals(")")){
                             openParens--;
-                        } else if (tokens.get(i).equals("[")){
-                            openBrackets++;
-                        } else if (tokens.get(i).equals("[")){
-                            openBrackets--;
                         } else {
-                            if (variableName.size() == 0 || openParens > 0 || openBrackets > 0){
+                            if (variableName.size() == 0 || openParens > 0 || tokens.get(i).equals("call") || tokens.get(i).equals("access")){
                                 variableName.add(tokens.get(i));
                             } else {
                                 break;
@@ -277,13 +277,73 @@ public class Inliner{
                         tokens.add(i, variableName.get(j));
                         i++;
                     }
-                    tokens.add("+");
-                    System.out.println("HERE");
+                    
+                    if (direction == 1){
+                        tokens.add(i, "+");
+                    } else {
+                        tokens.add(i, "-");
+                    }
                     i++;
-                    tokens.add("1");
+                    tokens.add(i, "1");
+                    i++;
+                    tokens.add(i, ";");
                     break;
                 case "post++":
+                    direction = 1;
                 case "post--":
+                    // increment/decrement on line before, but replace with original
+                    tokens.remove(i);
+                    tokens.remove(i);
+                    i--;
+                    int returnIndex = i;
+
+                    variableName = new ArrayList<>();
+                    openParens = 0;
+                    boolean variableFound = false;
+                    while (i > 0){
+                        if (tokens.get(i).equals("(")){
+                            openParens--;
+                        } else if (tokens.get(i).equals(")")){
+                            openParens++;
+                        } else {
+                            if (variableFound == false || openParens > 0){
+                                variableName.add(tokens.get(i));
+                                if (tokens.get(i).length() > 0 && tokens.get(i).charAt(0) == '#'){
+                                    variableFound = true;
+                                    break;
+                                }
+                            } else {
+                                break;
+                            }
+                        }
+                        i--;
+                    }
+
+                    i = returnIndex;
+
+                    while (i > 0){
+                        if (tokens.get(i).equals("{") || tokens.get(i).equals(";")){
+                            i++;
+                            break;
+                        }
+                        i--;
+                    }
+                    tokens.add(i, "def");
+                    i++;
+                    tokens.add(i, "#" + this.finalVarnum);
+                    i++;
+                    tokens.add(i, "=");
+                    i++;
+                    for (int j=0; j<variableName.size(); j++){
+                       tokens.add(i, variableName.get(j));
+                        i++;
+                    }
+                    tokens.add(i, ";");
+                    i++;
+
+                    this.finalVarnum++;
+                   
+
                     break;
             }
         }
@@ -796,30 +856,77 @@ public class Inliner{
     private ArrayList<String> breakMultipleOperations(ArrayList<String> tokens){
         ArrayList<String> result = new ArrayList<>();
 
-        String[] operators = {"%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "+=", "/=", "*=", "<=", ">=", "!=", "==", "%=", "^=", "&=", "|=", "~=", "-=", "->", "&&", "||", "&&=", "||=", ".", ">>", "<<", "<<=", ">>=", "=", "deref", "ref", "lognot", "bitnot", "call", "access", "pre++", "pre--", "post++", "post--"};
+        String[] operators = {"%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "<=", ">=", "!=", "==", "&&", "||", ".", ">>", "<<", "=", "deref", "ref", "lognot", "bitnot", "call", "access", "pre++", "pre--", "post++", "post--"};
         Set<String> operatorsSet = new HashSet<>();
         operatorsSet.addAll(Arrays.asList(operators));
 
-        // TODO: 
+
+        // iterate through the lines of the file and use infix to postfix to break up the lines
+        ArrayList<String> currentLine;
+        for (int i=0; i<tokens.size(); i++){
+            // each line should end with a semicolon or a {
+            int operatorCount = 0;
+            boolean wasNoEqual = true;
+            int startingIndex = i;
+            currentLine = new ArrayList<>();
+            while (i < tokens.size()){
+                if (tokens.get(i).equals("=")){
+                    wasNoEqual = false;
+                } else if (tokens.get(i).equals("{") || tokens.get(i).equals(";")){
+                    // this is the end of a line
+                    break;
+                }
+
+                if (operatorsSet.contains(tokens.get(i))){
+                    operatorCount++;
+                }
+
+                currentLine.add(tokens.get(i));
+                i++;
+            }
+
+            if (operatorCount > 2 || (operatorCount > 1 && wasNoEqual)){
+                // this line needs to be broken up
+                ArrayList<String> brokenLine = breakLineWithPostfix(currentLine);
+                for (int j=0; j<brokenLine.size(); j++){
+                    result.add(brokenLine.get(j));
+                }
+            } else {
+                for (int j=0; j<currentLine.size(); j++){
+                    result.add(currentLine.get(j));
+                }
+            }
+
+        }
+        
+
+        return result;
+    }
+
+    private ArrayList<String> breakLineWithPostfix(ArrayList<String> tokens){
+        String[] operators = {"%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "<=", ">=", "!=", "==", "&&", "||", ".", ">>", "<<", "=", "deref", "ref", "lognot", "bitnot", "call", "access", "pre++", "pre--", "post++", "post--", ","};
+        Set<String> operatorsSet = new HashSet<>();
+        operatorsSet.addAll(Arrays.asList(operators));
+
         // Create a HashMap with each operator's precedence for ordering
         HashMap<String, Integer> precedences = new HashMap();
+
         precedences.put("post++", 1);
         precedences.put("post--", 1);
         precedences.put("call", 1);
         precedences.put("access", 1);
         precedences.put(".", 1);
-        precedences.put("->", 1);
 
         precedences.put("pre++", 2);
         precedences.put("pre--", 2);
         precedences.put("lognot", 2);
         precedences.put("bitnot", 2);
-        precedences.put("deref", 2);
         precedences.put("ref", 2);
+        precedences.put("deref", 2);
 
         precedences.put("*", 3);
-        precedences.put("/", 3);
         precedences.put("%", 3);
+        precedences.put("/", 3);
 
         precedences.put("+", 4);
         precedences.put("-", 4);
@@ -827,10 +934,10 @@ public class Inliner{
         precedences.put("<<", 5);
         precedences.put(">>", 5);
 
-        precedences.put("<", 6);
-        precedences.put("<=", 6);
         precedences.put(">", 6);
         precedences.put(">=", 6);
+        precedences.put("<", 6);
+        precedences.put("<=", 6);
 
         precedences.put("==", 7);
         precedences.put("!=", 7);
@@ -843,23 +950,70 @@ public class Inliner{
 
         precedences.put("&&", 11);
 
-        precedences.put("||", 12);
+        precedences.put("||", 11);
 
         precedences.put("=", 14);
-        precedences.put("+=", 14);
-        precedences.put("-=", 14);
-        precedences.put("*=", 14);
-        precedences.put("/=", 14);
-        precedences.put("%=", 14);
-        precedences.put("<<=", 14);
-        precedences.put(">>=", 14);
-        precedences.put("&=", 14);
-        precedences.put("^=", 14);
-        precedences.put("|=", 14);
 
-        
+        precedences.put(",", 15);
+        System.out.println("BREAKING LINE: " + tokens.toString());
 
-        return result;
+        ArrayList<String> postfixExpression = new ArrayList<>();
+        Stack<String> operatorStack = new Stack<>();
+
+        for (int i=0; i<tokens.size(); i++){
+            if (operatorsSet.contains(tokens.get(i))){
+                // if the precedence of the current operator is higher than the operator on the top of the stack, 
+                // or stack is empty, or stack contains a (  => push
+                if (operatorStack.isEmpty() || operatorStack.peek().equals("(") || precedences.get(operatorStack.peek()) < precedences.get(tokens.get(i))){
+                    operatorStack.push(tokens.get(i));
+                } else {
+                    // pop all operators from the stack that have a precedence higher than or equal to current operator, then push current operator
+                    while (true){
+                        if (operatorStack.isEmpty()){
+                            break;
+                        }
+                        if (operatorStack.peek().equals("(") || precedences.get(operatorStack.peek()) < precedences.get(tokens.get(i))){
+                            break;
+                        }
+                        postfixExpression.add(operatorStack.pop());
+                    }
+                    operatorStack.push(tokens.get(i));
+                }
+                
+            } else if (tokens.get(i).equals("(")){
+                // if (, push to stack
+                operatorStack.push("(");
+            } else if (tokens.get(i).equals(")")){
+                // pop from the stack until (
+                while (true){
+                    if (operatorStack.isEmpty()){
+                        System.out.println("Mismatched parenthesis...");
+                        System.exit(1);
+                    }
+
+                    if (operatorStack.peek().equals("(")){
+                        operatorStack.pop();
+                        break;
+                    }
+
+                    postfixExpression.add(operatorStack.pop());
+
+                }
+            } else {
+                // if this is an operand, put it in the postfix expression
+                postfixExpression.add(tokens.get(i));
+            }
+        }
+
+        while (!operatorStack.isEmpty()){
+            postfixExpression.add(operatorStack.pop());
+        }
+
+        System.out.println("Resulting expression: " + postfixExpression.toString());
+
+        // TODO: now use the postfix expression to convert this into multiple lines of expressions, one on each line
+
+        return tokens;
     }
 
 
