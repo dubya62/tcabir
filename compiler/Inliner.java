@@ -175,6 +175,8 @@ public class Inliner{
         // break up lines that have more than one operation on them
         result = breakMultipleOperations(result);
 
+        // There is now at most 2 operations per line (1 if there is no equal sign
+
         // remove prefix and postfix operators
         //result = removePrefixAndPostfix(result);
         
@@ -397,7 +399,9 @@ public class Inliner{
 
                     result.add("=");
                     for (int j=0; j<before.size(); j++){
-                        result.add(before.get(j));
+                        if (!before.get(j).equals("def")){
+                            result.add(before.get(j));
+                        }
                     }
 
                     // add the operation
@@ -526,7 +530,9 @@ public class Inliner{
                     }
                     continue;
                 } else if (i > 0 && operatorsSet.contains(tokens.get(i-1))){
-                    result.add("0");
+                    if (!tokens.get(i-1).equals("++") && !tokens.get(i-1).equals("--")){
+                        result.add("0");
+                    }
                     switch(tokens.get(i)){
                         case "*":
                             result.add("deref");
@@ -568,7 +574,7 @@ public class Inliner{
             if (tokens.get(i).equals("(") || tokens.get(i).equals("[")){
                 // token before needs to be a var
                 if (i > 0){
-                    if (tokens.get(i-1).length() > 0 && tokens.get(i-1).charAt(0) == '#'){
+                    if ((tokens.get(i-1).length() > 0 && tokens.get(i-1).charAt(0) == '#') || tokens.get(i-1).equals(")")){
                         // cannot be a definition
                         if (i-1 > 0 && tokens.get(i-2).equals("def")){
                         } else {
@@ -897,7 +903,11 @@ public class Inliner{
                 }
             }
 
+            if (i < tokens.size()){
+                result.add(tokens.get(i));
+            }
         }
+
         
 
         return result;
@@ -911,54 +921,69 @@ public class Inliner{
         // Create a HashMap with each operator's precedence for ordering
         HashMap<String, Integer> precedences = new HashMap();
 
-        precedences.put("post++", 1);
-        precedences.put("post--", 1);
-        precedences.put("call", 1);
-        precedences.put("access", 1);
-        precedences.put(".", 1);
+        precedences.put("post++", 30);
+        precedences.put("post--", 30);
 
-        precedences.put("pre++", 2);
-        precedences.put("pre--", 2);
-        precedences.put("lognot", 2);
-        precedences.put("bitnot", 2);
-        precedences.put("ref", 2);
-        precedences.put("deref", 2);
+        precedences.put("call", 29);
+        precedences.put("access", 28);
 
-        precedences.put("*", 3);
-        precedences.put("%", 3);
-        precedences.put("/", 3);
+        precedences.put(".", 27);
 
-        precedences.put("+", 4);
-        precedences.put("-", 4);
+        precedences.put("pre++", 26);
+        precedences.put("pre--", 26);
 
-        precedences.put("<<", 5);
-        precedences.put(">>", 5);
+        precedences.put("lognot", 25);
+        precedences.put("bitnot", 25);
+        precedences.put("deref", 24);
+        precedences.put("ref", 23);
 
-        precedences.put(">", 6);
-        precedences.put(">=", 6);
-        precedences.put("<", 6);
-        precedences.put("<=", 6);
+        precedences.put("*", 22);
+        precedences.put("%", 22);
+        precedences.put("/", 22);
 
-        precedences.put("==", 7);
-        precedences.put("!=", 7);
+        precedences.put("+", 21);
+        precedences.put("-", 21);
 
-        precedences.put("&", 8);
+        precedences.put("<<", 20);
+        precedences.put(">>", 20);
 
-        precedences.put("^", 9);
+        precedences.put("<", 19);
+        precedences.put("<=", 19);
+        precedences.put(">", 18);
+        precedences.put(">=", 18);
 
-        precedences.put("|", 10);
+        precedences.put("==", 17);
+        precedences.put("!=", 17);
 
-        precedences.put("&&", 11);
+        precedences.put("&", 16);
 
-        precedences.put("||", 11);
+        precedences.put("^", 15);
 
-        precedences.put("=", 14);
+        precedences.put("|", 14);
 
-        precedences.put(",", 15);
+        precedences.put("&&", 13);
+
+        precedences.put("||", 12);
+
+
+        precedences.put(",", 11);
+
+
+        precedences.put("=", 10);
+
         System.out.println("BREAKING LINE: " + tokens.toString());
 
         ArrayList<String> postfixExpression = new ArrayList<>();
         Stack<String> operatorStack = new Stack<>();
+
+        // handle if the first token is def
+        boolean addDef = false;
+        if (tokens.size() > 0){
+            if (tokens.get(0).equals("def")){
+                addDef = true;
+                tokens.remove(0);
+            }
+        }
 
         for (int i=0; i<tokens.size(); i++){
             if (operatorsSet.contains(tokens.get(i))){
@@ -1011,9 +1036,53 @@ public class Inliner{
 
         System.out.println("Resulting expression: " + postfixExpression.toString());
 
-        // TODO: now use the postfix expression to convert this into multiple lines of expressions, one on each line
 
-        return tokens;
+        // TODO: now use the postfix expression to convert this into multiple lines of expressions, one on each line
+        ArrayList<String> result = new ArrayList<>();
+
+        Stack<String> operandStack = new Stack<>();
+        for (int i=0; i<postfixExpression.size(); i++){
+            if (operatorsSet.contains(postfixExpression.get(i))){
+                // this is an operator
+                if (operandStack.isEmpty()){
+                    System.out.println("Operand Stack was empty during evaluation of expression...");
+                    System.exit(1);
+                }
+                String second = operandStack.pop();
+                if (operandStack.isEmpty()){
+                    System.out.println("Operand Stack was empty during evaluation of expression...");
+                    System.exit(1);
+                }
+                String first = operandStack.pop();
+
+                // if the operator is not =, create a new variable and set it to this expression
+                if (!postfixExpression.get(i).equals("=")){
+                    result.add("def");
+                    result.add("#" + this.finalVarnum);
+                    result.add("=");
+                    operandStack.push("#" + this.finalVarnum);
+                    this.finalVarnum++;
+                } else if (addDef){
+                    result.add("def");
+                }
+                result.add(first);
+                result.add(postfixExpression.get(i));
+                result.add(second);
+                result.add(";");
+
+            } else {
+                // this is an operand
+                operandStack.push(postfixExpression.get(i));
+            }
+        }
+        while (!operandStack.isEmpty()){
+            result.add(operandStack.pop());
+            result.add(";");
+        }
+
+        System.out.println("Postfix Evalution: " + result.toString());
+
+        return result;
     }
 
 
