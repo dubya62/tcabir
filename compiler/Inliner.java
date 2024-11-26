@@ -178,7 +178,7 @@ public class Inliner{
         // There is now at most 2 operations per line (1 if there is no equal sign
 
         // remove prefix and postfix operators
-        //result = removePrefixAndPostfix(result);
+        result = removePrefixAndPostfix(result);
         
         
         /*
@@ -238,12 +238,64 @@ public class Inliner{
                     direction = 1;
                 case "pre--":
                     // if inside expression, perform operation before
-                    // TODO: finish this
+                    // FIXME: inside expression is not working
                     if (insideExpression){
-                        tokens.add(expressionStart, "");
+                        tokens.add(expressionStart, tokens.get(i+1));
                         expressionStart++;
+                        tokens.add(expressionStart, "=");
+                        expressionStart++;
+                        tokens.add(expressionStart, tokens.get(i+1));
+                        expressionStart++;
+                        if (direction == 1){
+                            tokens.add(expressionStart, "+");
+                        } else {
+                            tokens.add(expressionStart, "-");
+                        }
+                        expressionStart++;
+                        tokens.add(expressionStart, "1");
+                        expressionStart++;
+                        tokens.remove(i-1);
+                        tokens.remove(i-1);
+                        i++;
+                        continue;
+                    } else {
+                        // otherwise, perform operation before this line
+                        int returnIndex = i;
+                        while (i > 0){
+                            if (tokens.get(i).equals("{") || tokens.get(i).equals(";")){
+                                i++;
+                                break;
+                            }
+                            i--;
+                        }
+                        tokens.add(i, tokens.get(returnIndex+1));
+                        returnIndex++;
+                        i++;
+                        tokens.add(i, "=");
+                        returnIndex++;
+                        i++;
+                        tokens.add(i, tokens.get(returnIndex+1));
+                        returnIndex++;
+                        i++;
+                        if (direction == 1){
+                            tokens.add(i, "+");
+                        } else {
+                            tokens.add(i, "-");
+                        }
+                        returnIndex++;
+                        i++;
+                        tokens.add(i, "1");
+                        returnIndex++;
+                        i++;
+                        tokens.add(i, ";");
+                        i++;
+
+                        tokens.remove(returnIndex);
+                        tokens.remove(returnIndex);
+
+                        i = returnIndex;
+                        continue;
                     }
-                    break;
                 case "post++":
                     direction = 1;
                 case "post--":

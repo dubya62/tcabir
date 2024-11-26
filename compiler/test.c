@@ -5,7 +5,8 @@
 int getNumberOfOccurances(char* str, char letter){
     int b = 2;
 
-    b = b++ - *a++;
+    b = ++a + 2;
+    b = --a;
 
     return b + 3;
 }
