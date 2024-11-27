@@ -179,6 +179,9 @@ public class Inliner{
 
         // remove prefix and postfix operators
         result = removePrefixAndPostfix(result);
+
+        // remove expression delimitters
+        result = removeExpressionDelimitters(result);
         
         
         /*
@@ -190,12 +193,19 @@ public class Inliner{
         remove <= and => and != using !(>), !(<), and !(==)
         {"%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "==", "&&", "||", ".", ">>", "<<", "=", "deref", "ref", "lognot", "bitnot", "call", "access"};
         */
-        //result = removeOrEqualOperators(result);
+        result = removeOrEqualOperators(result);
+        result = breakMultipleOperations(result);
+        result = removeExpressionDelimitters(result);
 
         /*
-        remove || using  (a||b) = (!a && !b)
+        remove || using  (a||b) = !(!a && !b)
         {"%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "==", "&&", ".", ">>", "<<", "=", "deref", "ref", "lognot", "bitnot", "call", "access"};
+        */
+        result = removeLogicalOr(result);
+        result = breakMultipleOperations(result);
+        result = removeExpressionDelimitters(result);
 
+        /*
         remove && using nested if statments
         {"%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "==", ".", ">>", "<<", "=", "deref", "ref", "lognot", "bitnot", "call", "access"};
 
@@ -209,6 +219,150 @@ public class Inliner{
         {"%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "==", ".", "=", "ref", "bitnot", "call", "access"};
          
          */
+        return result;
+    }
+
+    private ArrayList<String> removeExpressionDelimitters(ArrayList<String> tokens){
+        ArrayList<String> result = new ArrayList<>();
+        for (int i=0; i<tokens.size(); i++){
+            if (tokens.get(i).equals("StartExpression") || tokens.get(i).equals("EndExpression")){
+                continue;
+            }
+            result.add(tokens.get(i));
+        }
+        return result;
+    }
+
+
+    private ArrayList<String> removeLogicalOr(ArrayList<String> tokens){
+        // remove || using  (a||b) = !(!a && !b)
+        ArrayList<String> result = new ArrayList<>();
+
+        for (int i=0; i<tokens.size(); i++){
+            if (tokens.get(i).equals("||")){
+                tokens.set(i, "&&");
+                int returnIndex = i;
+                tokens.add(i, ")");
+                i++;
+                i++;
+                tokens.add(i, "0");
+                i++;
+                tokens.add(i, "lognot");
+                i++;
+                tokens.add(i, "(");
+                while (i < tokens.size()){
+                    if (tokens.get(i).equals(";")){
+                        tokens.add(i, ")");
+                        tokens.add(i, ")");
+                        break;
+                    }
+                    i++;
+                }
+
+
+                i = returnIndex;
+                boolean found = false;
+                while (i > 0){
+                    switch(tokens.get(i)){
+                        case "=":
+                        case "{":
+                        case ";":
+                            found = true;
+                            break;
+                    }
+                    if (found){
+                        i++;
+                        break;
+                    }
+                    i--;
+                }
+                tokens.add(i, "0");
+                i++;
+                tokens.add(i, "lognot");
+                i++;
+                tokens.add(i, "(");
+                i++;
+                tokens.add(i, "0");
+                i++;
+                tokens.add(i, "lognot");
+                i++;
+                tokens.add(i, "(");
+
+
+            }
+        }
+
+        for (int i=0; i<tokens.size(); i++){
+            result.add(tokens.get(i));
+        }
+
+        return result;
+    }
+
+
+    private ArrayList<String> removeOrEqualOperators(ArrayList<String> tokens){
+        // remove <= and >= and != using !(>), !(<), and !(==)
+        ArrayList<String> result = new ArrayList<>();
+
+        String replacement = "";
+
+        for (int i=0; i<tokens.size(); i++){
+            switch(tokens.get(i)){
+                case "<=":
+                case ">=":
+                case "!=":
+
+                    if (tokens.get(i).equals("<=")){
+                        replacement = ">";
+                    } else if (tokens.get(i).equals(">=")){
+                        replacement = "<";
+                    } else {
+                        replacement = "==";
+                    }
+
+                    tokens.set(i, replacement);
+                    int returnIndex = i;
+
+                    // look backwards for = or ; or {
+                    boolean found = false;
+                    while (i > 0){
+                        switch(tokens.get(i)){
+                            case "=":
+                            case ";":
+                            case "{":
+                                found = true;
+                                break;
+                        }
+                        if (found){
+                            i++;
+                            break;
+                        }
+                        i--;
+                    }
+                    tokens.add(i, "0");
+                    i++;
+                    tokens.add(i, "lognot");
+                    i++;
+                    tokens.add(i, "(");
+
+                    i = returnIndex;
+                    while (i < tokens.size()){
+                        if (tokens.get(i).equals(";")){
+                            break;
+                        }
+                        i++;
+                    }
+                    tokens.add(i, ")");
+                    i++;
+
+                    break;
+            }
+        }
+
+        for (int i=0; i<tokens.size(); i++){
+            result.add(tokens.get(i));
+        }
+
         return result;
     }
 
@@ -229,9 +383,13 @@ public class Inliner{
                 case "StartExpression":
                     expressionStart = i;
                     insideExpression = true;
+                    tokens.remove(i);
+                    i--;
                     break;
                 case "EndExpression":
                     insideExpression = false;
+                    tokens.remove(i);
+                    i--;
                     break;
 
                 case "pre++":
@@ -241,10 +399,13 @@ public class Inliner{
                     // FIXME: inside expression is not working
                     if (insideExpression){
                         tokens.add(expressionStart, tokens.get(i+1));
+                        i++;
                         expressionStart++;
                         tokens.add(expressionStart, "=");
+                        i++;
                         expressionStart++;
                         tokens.add(expressionStart, tokens.get(i+1));
+                        i++;
                         expressionStart++;
                         if (direction == 1){
                             tokens.add(expressionStart, "+");
@@ -252,8 +413,13 @@ public class Inliner{
                             tokens.add(expressionStart, "-");
                         }
                         expressionStart++;
+                        i++;
                         tokens.add(expressionStart, "1");
                         expressionStart++;
+                        i++;
+                        tokens.add(expressionStart, ";");
+                        expressionStart++;
+                        i++;
                         tokens.remove(i-1);
                         tokens.remove(i-1);
                         i++;
@@ -299,7 +465,34 @@ public class Inliner{
                 case "post++":
                     direction = 1;
                 case "post--":
+                    // increment on the next line
+                    tokens.remove(i);
+                    tokens.remove(i);
+                    int returningIndex = i;
+                    while (i < tokens.size()){
+                        if (tokens.get(i).equals(";")){
+                            i++;
+                            break;
+                        }
+                        i++;
+                    }
+                    tokens.add(i, tokens.get(returningIndex-1));
+                    i++;
+                    tokens.add(i, "=");
+                    i++;
+                    tokens.add(i, tokens.get(returningIndex-1));
+                    i++;
+                    if (direction == 1){
+                        tokens.add(i, "+");
+                    } else {
+                        tokens.add(i, "-");
+                    }
+                    i++;
+                    tokens.add(i, "1");
+                    i++;
+                    tokens.add(i, ";");
 
+                    i = returningIndex;
 
                     break;
             }
