@@ -26,6 +26,11 @@ public class Inliner{
 
         // convert returns
         this.tokens = convertReturns(this.tokens);
+        this.tokens = breakMultipleOperations(this.tokens);
+        this.tokens = removeExpressionDelimitters(this.tokens);
+
+        // convert function calls
+        this.tokens = convertFunctionCalls(this.tokens);
 
         // inline all functions
         //this.tokens = inlineFunctions(this.tokens);
@@ -153,35 +158,65 @@ public class Inliner{
 
 
     private ArrayList<String> breakOperations(ArrayList<String> tokens){
+        Main.debug("Breaking All Operations...");
+
         // break stuff from if statements
+        Main.debug("Breaking operations from if statements...");
         ArrayList<String> result = breakOperationsFromIfs(tokens);
+        Main.debug("Current Tokens: ");
+        Main.debug(result.toString());
 
         // break stuff out of return statements
+        Main.debug("Breaking operations from return statements...");
         result = breakOperationsFromReturns(result);
+        Main.debug("Current Tokens: ");
+        Main.debug(result.toString());
         
         // break stuff out of function calls
+        Main.debug("Breaking operations from function calls...");
         result = breakOperationsFromFunctionCalls(result);
+        Main.debug("Current Tokens: ");
+        Main.debug(result.toString());
 
         // convert unary operators to binary
+        Main.debug("Converting unary operators to binary operators...");
         result = convertUnaryOperators(result);
+        Main.debug("Current Tokens: ");
+        Main.debug(result.toString());
+
+        // converting function calls and accesses
+        Main.debug("Function calls and accesses to operators...");
         result = convertCallsAndAccesses(result);
+        Main.debug("Current Tokens: ");
+        Main.debug(result.toString());
 
         // convert assigment operations to assignment and the operation
+        Main.debug("Converting assignment operators...");
         result = convertAssignmentOperations(result);
+        Main.debug("Current Tokens: ");
+        Main.debug(result.toString());
 
         // convert -> to *.
+        Main.debug("Converting the -> operator...");
         result = convertArrowOperator(result);
+        Main.debug("Current Tokens: ");
+        Main.debug(result.toString());
 
         // break up lines that have more than one operation on them
+        Main.debug("Breaking up lines that have more than one operation on them...");
         result = breakMultipleOperations(result);
+        Main.debug("Current Tokens: ");
+        Main.debug(result.toString());
 
         // There is now at most 2 operations per line (1 if there is no equal sign
 
         // remove prefix and postfix operators
+        Main.debug("Removing the prefix and postfix operators...");
         result = removePrefixAndPostfix(result);
-
         // remove expression delimitters
         result = removeExpressionDelimitters(result);
+        Main.debug("Current Tokens: ");
+        Main.debug(result.toString());
 
         /*
          REMAINING OPERATIONS:
@@ -192,40 +227,86 @@ public class Inliner{
         remove <= and => and != using !(>), !(<), and !(==)
         {"%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "==", "&&", "||", ".", ">>", "<<", "=", "deref", "ref", "lognot", "bitnot", "call", "access"};
         */
+        Main.debug("Removing the <=, >=, and != operators...");
         result = removeOrEqualOperators(result);
         result = breakMultipleOperations(result);
         result = removeExpressionDelimitters(result);
+        Main.debug("Current Tokens: ");
+        Main.debug(result.toString());
 
         /*
         remove || using  (a||b) = !(!a && !b)
         {"%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "==", "&&", ".", ">>", "<<", "=", "deref", "ref", "lognot", "bitnot", "call", "access"};
         */
+        Main.debug("Removing the || operator...");
         result = removeLogicalOr(result);
         result = breakMultipleOperations(result);
         result = removeExpressionDelimitters(result);
+        Main.debug("Current Tokens: ");
+        Main.debug(result.toString());
 
         // make sure all if statements have an else clause
+        Main.debug("Creating empty else clauses...");
         result = createElseClauses(result);
+        Main.debug("Current Tokens: ");
+        Main.debug(result.toString());
 
         /*
         remove && using nested if statments
         {"%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "==", ".", ">>", "<<", "=", "deref", "ref", "lognot", "bitnot", "call", "access"};
         */
+        Main.debug("Removing the && operator...");
         result = removeLogicalAnd(result);
         result = createElseClauses(result);
+        Main.debug("Current Tokens: ");
+        Main.debug(result.toString());
 
         /*
         remove lognot using if/else statments
         {"%", "^", "&", "<<", ">>", "|", "-", "+", "<", ">", "/", "*", "==", ".", "=", "deref", "ref", "bitnot", "call", "access"};
         */
+        Main.debug("Removing the ! operator...");
         result = removeLognot(result);
         result = createElseClauses(result);
+        Main.debug("Current Tokens: ");
+        Main.debug(result.toString());
          
         /*
         convert derefs to accesses
         {"%", "^", "&", "<<", ">>", "|", "-", "+", "<", ">", "/", "*", "==", ".", "=", "ref", "bitnot", "call", "access"};
-         
          */
+        Main.debug("Removing the dereference operator...");
+        result = convertDerefsToAccesses(result);
+        result = breakMultipleOperations(result);
+        Main.debug("Current Tokens: ");
+        Main.debug(result.toString());
+
+        Main.debug("Finished Breaking Operations!");
+
+        return result;
+    }
+
+
+    private ArrayList<String> convertDerefsToAccesses(ArrayList<String> tokens){
+        ArrayList<String> result = new ArrayList<>();
+
+        // #1 = 0 deref #0
+        // =>
+        // #1 = #0 access 0
+
+        for (int i=0; i<tokens.size(); i++){
+            if (tokens.get(i).equals("deref")){
+                tokens.set(i, "access");
+                String temp = tokens.get(i+1);
+                tokens.set(i+1, tokens.get(i-1));
+                tokens.set(i-1, temp);
+            }
+        }
+
+        for (int i=0; i<tokens.size(); i++){
+            result.add(tokens.get(i));
+        }
+
         return result;
     }
 
@@ -1238,7 +1319,7 @@ public class Inliner{
     private ArrayList<String> breakMultipleOperations(ArrayList<String> tokens){
         ArrayList<String> result = new ArrayList<>();
 
-        String[] operators = {"%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "<=", ">=", "!=", "==", "&&", "||", ".", ">>", "<<", "=", "deref", "ref", "lognot", "bitnot", "call", "access", "pre++", "pre--", "post++", "post--"};
+        String[] operators = {"%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "<=", ">=", "!=", "==", "&&", "||", ".", ">>", "<<", "=", "deref", "ref", "lognot", "bitnot", "call", "access", "pre++", "pre--", "post++", "post--", ","};
         Set<String> operatorsSet = new HashSet<>();
         operatorsSet.addAll(Arrays.asList(operators));
 
@@ -1267,7 +1348,18 @@ public class Inliner{
                 i++;
             }
 
-            if (operatorCount > 2 || (operatorCount > 1 && wasNoEqual)){
+            boolean containsFunctionDefinition = false;
+            for (int j=0; j<currentLine.size(); j++){
+                if (currentLine.get(j).equals("(")){
+                    if (j > 0){
+                        if (currentLine.get(j-1).length() > 0 && currentLine.get(j-1).charAt(0) == '#'){
+                            containsFunctionDefinition = true;
+                        }
+                    }
+                }
+            }
+
+            if ((operatorCount > 2 || (operatorCount > 1 && wasNoEqual)) && !(containsFunctionDefinition)){ 
                 // this line needs to be broken up
                 ArrayList<String> brokenLine = breakLineWithPostfix(currentLine);
                 result.add("StartExpression");
@@ -1465,37 +1557,73 @@ public class Inliner{
 
 
     private ArrayList<String> convertReturns(ArrayList<String> tokens){
+        Main.debug("Making functions directly modify a variable passed by reference rather than returning the value...");
+
         ArrayList<String> result = new ArrayList<>();
 
-        // add an argument to each function that is a pointer to the return type
-
+        // add an argument to each function definition that is a pointer to the return type
+        // 
         for (int i=0; i<tokens.size(); i++){
-            if (tokens.get(i).equals("def")){
-                if (i+2 < tokens.size() && tokens.get(i+1).length() > 0 && tokens.get(i+1).charAt(0) == '#'){
-                    if (tokens.get(i+2).equals("(")){
-                        result.add(tokens.get(i));
-                        result.add(tokens.get(i+1));
-                        result.add(tokens.get(i+2));
-                        result.add("def");
-                        result.add("#" + this.finalVarnum);
-                        // TODO: make type of this variable a pointer to the return type
-                        if (i+3 < tokens.size() && !tokens.get(i+3).equals(")")){
-                            result.add(",");
+            if (tokens.get(i).equals("(")){
+                if (i > 0){
+                    if (tokens.get(i-1).length() > 0 && tokens.get(i-1).charAt(0) == '#'){
+                        // this is a function definition
+                        i++;
+                        tokens.add(i, "def");
+                        i++;
+                        tokens.add(i, "#" + this.finalVarnum);
+                        i++;
+                        if (!tokens.get(i).equals(")")){
+                            tokens.add(i, ",");
                         }
-                        i += 2;
-                        int returnIndex = i;
 
-                        // TODO: look for all returns inside this function and replace
-                        //      return x;
-                        // WITH:
-                        //      *returnVar = x
-                        //      return;
-
+                        // at any return within this block, do *(newvar) = thevalue; return;
+                        int openBraces = 0;
+                        boolean done = false;
+                        while (i < tokens.size()){
+                            switch(tokens.get(i)){
+                                case "{":
+                                    openBraces++;
+                                    break;
+                                case "}":
+                                    openBraces--;
+                                    if (openBraces == 0){
+                                        done = true;
+                                    }
+                                    break;
+                                case "return":
+                                    tokens.set(i, "#" + this.finalVarnum);
+                                    i++;
+                                    tokens.add(i, "access");
+                                    i++;
+                                    tokens.add(i, "0");
+                                    i++;
+                                    tokens.add(i, "=");
+                                    while (i < tokens.size()){
+                                        if (tokens.get(i).equals(";")){
+                                            i++;
+                                            break;
+                                        }
+                                        i++;
+                                    }
+                                    tokens.add(i, "return");
+                                    i++;
+                                    tokens.add(i, ";");
+                                    break;
+                            }
+                            if (done){
+                                break;
+                            }
+                            i++;
+                        }
                         this.finalVarnum++;
-                        continue;
+
                     }
                 }
             }
+        }
+
+        for (int i=0; i<tokens.size(); i++){
             result.add(tokens.get(i));
         }
 
@@ -1504,6 +1632,7 @@ public class Inliner{
 
 
     private ArrayList<String> inlineFunctions(ArrayList<String> tokens){
+        Main.debug("Inlining Function Calls");
         ArrayList<String> result = new ArrayList<>();
 
         for (int i=0; i<tokens.size(); i++){
@@ -1563,6 +1692,41 @@ public class Inliner{
 
         return result;
     }
+
+
+    private ArrayList<String> convertFunctionCalls(ArrayList<String> tokens){
+        // instead of setting a variable to a function call, make a pointer to the variable be the first argument
+        // on function call, pass the variable that is set to the result as the first argument instead
+        // of setting it
+        // #1 = fib(#0) 
+        // =>
+        // #1 = fib call #0
+        // =>
+        // #2 = 0 ref #1
+        // #3 = #2, #0
+        // fib call #3
+        Main.debug("Converting funciton calls to use references...");
+        ArrayList<String> result = new ArrayList<>();
+        
+        for (int i=0; i<tokens.size(); i++){
+        }
+
+
+        for (int i=0; i<tokens.size(); i++){
+            result.add(tokens.get(i));
+        }
+
+        result = breakMultipleOperations(result);
+        result = removeExpressionDelimitters(result);
+
+        Main.debug("Finished converting funciton calls to use references!");
+        Main.debug("Current tokens: ");
+        Main.debug(result.toString());
+
+        return result;
+    }
+
+
 }
 
 
