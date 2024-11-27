@@ -20,6 +20,7 @@ public class Inliner{
         // convert multitoken operations into single token operations
         this.tokens = combineMultiTokenOperations(this.tokens);
 
+
         // break operations
         this.tokens = breakOperations(this.tokens);
 
@@ -168,9 +169,9 @@ public class Inliner{
         // convert assigment operations to assignment and the operation
         result = convertAssignmentOperations(result);
 
+
         // convert -> to *.
         result = convertArrowOperator(result);
-
 
         // break up lines that have more than one operation on them
         result = breakMultipleOperations(result);
@@ -182,8 +183,7 @@ public class Inliner{
 
         // remove expression delimitters
         result = removeExpressionDelimitters(result);
-        
-        
+
         /*
          REMAINING OPERATIONS:
         {"%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "<=", ">=", "!=", "==", "&&", "||", ".", ">>", "<<", "=", "deref", "ref", "lognot", "bitnot", "call", "access"};
@@ -205,10 +205,17 @@ public class Inliner{
         result = breakMultipleOperations(result);
         result = removeExpressionDelimitters(result);
 
+        // make sure all if statements have an else clause
+        result = createElseClauses(result);
+
         /*
         remove && using nested if statments
         {"%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "==", ".", ">>", "<<", "=", "deref", "ref", "lognot", "bitnot", "call", "access"};
+        */
+        result = removeLogicalAnd(result);
+        result = createElseClauses(result);
 
+        /*
         remove shifts using * and /
         {"%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "==", ".", "=", "deref", "ref", "lognot", "bitnot", "call", "access"};
 
@@ -221,6 +228,147 @@ public class Inliner{
          */
         return result;
     }
+
+
+    private ArrayList<String> removeLogicalAnd(ArrayList<String> tokens){
+        // remove && using nested if statments
+        ArrayList<String> result = new ArrayList<>();
+
+
+        for (int i=0; i<tokens.size(); i++){
+            if (tokens.get(i).equals("&&")){
+                // initialize to 0 then nest two if statements to set to 1
+                // look for = or ; or { or } or :
+                int startingIndex = i;
+
+                boolean found = false;
+                ArrayList<String> before = new ArrayList<>();
+                boolean gettingBefore = false;
+
+                int beginningIndex = 0;
+                while (i > 0){
+                    switch(tokens.get(i)){
+                        case "=":
+                            gettingBefore = true;
+                            beginningIndex = i+1;
+                            break;
+                        case ";":
+                        case ":":
+                        case "{":
+                        case "}":
+                            found = true;
+                            i++;
+                            if (beginningIndex == 0){
+                                beginningIndex = i;
+                            }
+                            break;
+                    }
+                    if (found){
+                        break;
+                    }
+                    if (gettingBefore && !tokens.get(i).equals("=")){
+                        before.add(0, tokens.get(i));
+                    }
+                    i--;
+                }
+                i = beginningIndex;
+                tokens.add(i, "0");
+                i++;
+                tokens.add(i, ";");
+                i++;
+                tokens.add(i, "if");
+                i++;
+                tokens.add(i, "(");
+                i++;
+
+                i = startingIndex + 4;
+                tokens.add(i, ")");
+                i++;
+                tokens.add(i, "{");
+                i++;
+                tokens.set(i, "if");
+                i++;
+                tokens.add(i, "(");
+                i++;
+                while (i < tokens.size()){
+                    if (tokens.get(i).equals(";")){
+                        break;
+                    }
+                    i++;
+                }
+                tokens.add(i, ")");
+                i++;
+                tokens.add(i, "{");
+                i++;
+                for (int j=0; j<before.size(); j++){
+                    tokens.add(i, before.get(j));
+                    i++;
+                }
+                tokens.add(i, "=");
+                i++;
+                tokens.add(i, "1");
+                i++;
+                tokens.add(i, ";");
+                i++;
+                tokens.add(i, "}");
+                i++;
+                tokens.add(i, "}");
+                i++;
+                
+            }
+        }
+
+        for (int i=0; i<tokens.size(); i++){
+            result.add(tokens.get(i));
+        }
+
+        return result;
+    }
+
+
+    private ArrayList<String> createElseClauses(ArrayList<String> tokens){
+        ArrayList<String> result = new ArrayList<>();
+
+        for (int i=0; i<tokens.size(); i++){
+            if (tokens.get(i).equals("if")){
+                int returnIndex = i;
+
+                int openBraces = 0;
+
+                while (i < tokens.size()){
+                    if (tokens.get(i).equals("{")){
+                        openBraces++;
+                    } else if (tokens.get(i).equals("}")){
+                        openBraces--;
+                        if (openBraces == 0){
+                            i++;
+                            break;
+                        }
+                    }
+                    i++;
+                }
+                if (i < tokens.size()){
+                    if (tokens.get(i).equals("else")){
+                    } else {
+                        // put an else here
+                        tokens.add(i, "else");
+                        i++;
+                        tokens.add(i, "{");
+                        i++;
+                        tokens.add(i, "}");
+                    }
+                }
+                i = returnIndex;
+            }
+        }
+
+        for (int i=0; i<tokens.size(); i++){
+            result.add(tokens.get(i));
+        }
+
+        return result;
+    }
+
 
     private ArrayList<String> removeExpressionDelimitters(ArrayList<String> tokens){
         ArrayList<String> result = new ArrayList<>();
@@ -267,6 +415,7 @@ public class Inliner{
                         case "=":
                         case "{":
                         case ";":
+                        case "}":
                             found = true;
                             break;
                     }
@@ -330,6 +479,7 @@ public class Inliner{
                             case "=":
                             case ";":
                             case "{":
+                            case "}":
                                 found = true;
                                 break;
                         }
@@ -396,7 +546,6 @@ public class Inliner{
                     direction = 1;
                 case "pre--":
                     // if inside expression, perform operation before
-                    // FIXME: inside expression is not working
                     if (insideExpression){
                         tokens.add(expressionStart, tokens.get(i+1));
                         i++;
@@ -543,7 +692,6 @@ public class Inliner{
                         i++;
                     }
 
-                    System.out.println(before.toString());
 
                     result.add("=");
                     for (int j=0; j<before.size(); j++){
@@ -779,6 +927,7 @@ public class Inliner{
             if (tokens.get(i).equals("if")){
                 ArrayList<String> betweenParenthesis = new ArrayList<>();
                 // get tokens between the parenthesis
+                int startingIndex = i;
                 if (i+1 < tokens.size() && tokens.get(i+1).equals("(")){
                     i += 2;
                     int openParens = 1;
@@ -820,6 +969,10 @@ public class Inliner{
                     result.add("#" + this.finalVarnum);
                     this.finalVarnum++;
                     i = endParenths;
+                } else {
+                    result.add("if");
+                    i = startingIndex;
+                    continue;
                 }
 
             }
