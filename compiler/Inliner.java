@@ -169,7 +169,6 @@ public class Inliner{
         // convert assigment operations to assignment and the operation
         result = convertAssignmentOperations(result);
 
-
         // convert -> to *.
         result = convertArrowOperator(result);
 
@@ -216,16 +215,92 @@ public class Inliner{
         result = createElseClauses(result);
 
         /*
-        remove shifts using * and /
-        {"%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "==", ".", "=", "deref", "ref", "lognot", "bitnot", "call", "access"};
-
         remove lognot using if/else statments
-        {"%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "==", ".", "=", "deref", "ref", "bitnot", "call", "access"};
+        {"%", "^", "&", "<<", ">>", "|", "-", "+", "<", ">", "/", "*", "==", ".", "=", "deref", "ref", "bitnot", "call", "access"};
+        */
+        result = removeLognot(result);
+        result = createElseClauses(result);
          
+        /*
         convert derefs to accesses
-        {"%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "==", ".", "=", "ref", "bitnot", "call", "access"};
+        {"%", "^", "&", "<<", ">>", "|", "-", "+", "<", ">", "/", "*", "==", ".", "=", "ref", "bitnot", "call", "access"};
          
          */
+        return result;
+    }
+
+
+    private ArrayList<String> removeLognot(ArrayList<String> tokens){
+        // a = 0 lognot #1
+        // =>
+        // a = 1;
+        // if (#1){
+        //    a = 0;
+        // }
+
+        ArrayList<String> result = new ArrayList<>();
+
+        for (int i=0; i<tokens.size(); i++){
+            if (tokens.get(i).equals("lognot")){
+                int returnIndex = i;
+
+                ArrayList<String> before = new ArrayList<>();
+                i--;
+                i--;
+                boolean found = false;
+                while (i > 0){
+                    switch(tokens.get(i)){
+                        case "{":
+                        case "}":
+                        case ";":
+                        case ":":
+                            found = true;
+                            break;
+                    }
+                    if (found){
+                        break;
+                    }
+                    if (!tokens.get(i).equals("def")){
+                        before.add(0, tokens.get(i));
+                    }
+                    i--;
+                }
+
+                i = returnIndex;
+                tokens.set(i-1, "1");
+                tokens.set(i, ";");
+                i++;
+                tokens.add(i, "if");
+                i++;
+                tokens.add(i, "(");
+                // look for the end of the line
+                while (i < tokens.size()){
+                    if (tokens.get(i).equals(";")){
+                        break;
+                    }
+                    i++;
+                }
+                tokens.add(i, ")");
+                i++;
+                tokens.add(i, "{");
+                i++;
+                for (int j=0; j<before.size(); j++){
+                    tokens.add(i, before.get(j));
+                    i++;
+                }
+                tokens.add(i, "0");
+                i++;
+                tokens.add(i, ";");
+                i++;
+                tokens.add(i, "}");
+
+            }
+        }
+
+        for (int i=0; i<tokens.size(); i++){
+            result.add(tokens.get(i));
+        }
+
         return result;
     }
 
@@ -266,7 +341,7 @@ public class Inliner{
                     if (found){
                         break;
                     }
-                    if (gettingBefore && !tokens.get(i).equals("=")){
+                    if (gettingBefore && !tokens.get(i).equals("=") && !tokens.get(i).equals("def")){
                         before.add(0, tokens.get(i));
                     }
                     i--;
