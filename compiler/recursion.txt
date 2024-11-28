@@ -1,0 +1,102 @@
+int fib(int n){
+    if (n <= 1){
+        return n;
+    }
+    return fib(n-2) + fib(n-1);
+}
+
+
+fib(int* #3, int n){
+    #0 = n <= 1;
+    if (#0){
+        return n;
+    }
+    #1 = fib(n-2);
+    #2 = fib(n-1);
+    #4 = #1 + #2;
+    #3 access 0 = #4;
+    return;
+}
+
+
+fib(int* #3, int n){
+    if (call <= 0){
+        #0 = n <= 1;
+        if (#0){
+            #3 access 0 = n;
+            return;
+        }
+        #1 = fib(n-2); // push incremented call # to stack. call = 0
+    }
+
+    if (call <= 1){
+        #2 = fib(n-1); // push incremented call # to stack. call = 0
+    }
+
+    if (call <= 2){
+        #4 = #1 + #2;
+        #3 access 0 = #4;
+        return;
+    }
+}
+
+
+fib(int* #3, int n){
+    if (call <= 0){
+        #0 = n <= 1;
+        if (#0){
+            #3 access 0 = n;
+            return;
+        }
+        #1 = fib(n-2); // push incremented call # to stack. call = 0
+        push #1;
+    }
+
+    if (call <= 1){
+        #2 = fib(n-1); // push incremented call # to stack. call = 0
+        push #2;
+    }
+
+    if (call <= 2){
+        #4 = #1 + #2;
+        push #4;
+        #3 access 0 = #4;
+        return;
+    }
+}
+
+// on return, pop local vars and call number and loop back to start of function
+
+fib(5);
+call = 0
+push call
+[call=1] -> fib(3)
+
+fib(3);
+call = 0
+push call
+[call=1, call=1] -> fib(1)
+
+fib(1);
+call = 0
+#1 = n
+[call=1, call=1]
+return
+
+pop 
+fib(3) (continued)
+call=1
+[call=1, call=2] -> fib(2)
+
+
+// break function up 
+
+// emulate the call stack using a memory region for the space and rsp and rbp values
+
+// for the memory region, use an array of floats, ints, chars, doubles, and longs (all the same region) and access this region rather than using local variables
+
+
+
+
+
+

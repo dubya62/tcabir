@@ -33,7 +33,7 @@ public class Inliner{
         this.tokens = convertFunctionCalls(this.tokens);
 
         // inline all functions
-        //this.tokens = inlineFunctions(this.tokens);
+        this.tokens = inlineFunctions(this.tokens);
 
         Main.debug("Inliner is finished!");
         Main.debug("Inliner output:");
@@ -1369,7 +1369,11 @@ public class Inliner{
                 result.add("EndExpression");
             } else {
                 for (int j=0; j<currentLine.size(); j++){
-                    result.add(currentLine.get(j));
+                    if (containsFunctionDefinition){
+                        result.add(currentLine.get(j));
+                    } else if (!currentLine.get(j).equals("(") && !currentLine.get(j).equals(")")){
+                        result.add(currentLine.get(j));
+                    }
                 }
             }
 
@@ -1635,59 +1639,15 @@ public class Inliner{
         Main.debug("Inlining Function Calls");
         ArrayList<String> result = new ArrayList<>();
 
+        // handle recursive function calls
         for (int i=0; i<tokens.size(); i++){
-            // figure out if this token is a function definition
-            int startingIndex = i;
-            if (tokens.get(i).length() > 0){
-                if (tokens.get(i).charAt(0) == '#'){
-                    String functionName = tokens.get(i);
-                    if (i+1 < tokens.size()){
-                        if (tokens.get(i+1).equals("(")){
-                            // tokens[i] is the function's name
-                            // look for references to this function inside of its own scope
-                            int openParens = 0;
-                            while (i < tokens.size()){
-                                if (tokens.get(i).equals("(")){
-                                    openParens++;
-                                } else if (tokens.get(i).equals(")")){
-                                    openParens--;
-                                    if (openParens == 0){
-                                        break;
-                                    }
-                                }
-                                i++;
-                            }
 
-                            i++;
-                            if (i < tokens.size() && tokens.get(i).equals("{")){
-                            } else {
-                                i = startingIndex;
-                                result.add(tokens.get(i));
-                                continue;
-                            }
-                            
-                            int openBraces = 0;
-                            boolean isRecursive = false;
-                            while (i < tokens.size()){
-                                if (tokens.get(i).equals("{")){
-                                    openBraces++;
-                                } else if (tokens.get(i).equals("}")){
-                                    openBraces--;
-                                    if (openBraces == 0){
-                                        break;
-                                    }
-                                } else if (tokens.get(i).equals(functionName)){
-                                    // this is a recursive function
-                                    isRecursive = true;
-                                }
-                                i++;
-                            }
+            
+        }
 
 
-                        }
-                    }
-                }
-            }
+        for (int i=0; i<tokens.size(); i++){
+            result.add(tokens.get(i));
         }
 
         return result;
@@ -1705,10 +1665,160 @@ public class Inliner{
         // #2 = 0 ref #1
         // #3 = #2, #0
         // fib call #3
-        Main.debug("Converting funciton calls to use references...");
+        Main.debug("Converting function calls to use references...");
         ArrayList<String> result = new ArrayList<>();
         
+        int startingIndex;
         for (int i=0; i<tokens.size(); i++){
+            if (tokens.get(i).equals("call")){
+                startingIndex = i;
+                if (i > 2 && tokens.get(i-2).equals("=")){
+                    // this return value needs to be passed
+                    while (i > 0){
+                        if (tokens.get(i).equals(";") || tokens.get(i).equals("{") || tokens.get(i).equals("}") || tokens.get(i).equals(":")){
+                            i++;
+                            break;
+                        }
+                        i--;
+                    }
+                    if (startingIndex > 4 && tokens.get(startingIndex-4).equals("def")){
+                        tokens.add(i, "def");
+                        i++;
+                        startingIndex++;
+                        tokens.add(i, tokens.get(startingIndex-3));
+                        i++;
+                        startingIndex++;
+                        tokens.add(i, ";");
+                        i++;
+                        startingIndex++;
+                    }
+                    tokens.add(i, "def");
+                    i++;
+                    startingIndex++;
+                    tokens.add(i, "#" + this.finalVarnum);
+                    i++;
+                    startingIndex++;
+                    tokens.add(i, "=");
+                    i++;
+                    startingIndex++;
+                    tokens.add(i, "0");
+                    i++;
+                    startingIndex++;
+                    tokens.add(i, "ref");
+                    i++;
+                    startingIndex++;
+                    tokens.add(i, tokens.get(startingIndex-3));
+                    i++;
+                    startingIndex++;
+                    tokens.add(i, ";");
+                    i++;
+                    startingIndex++;
+                    this.finalVarnum++;
+                    tokens.add(i, "def");
+                    i++;
+                    startingIndex++;
+                    tokens.add(i, "#" + this.finalVarnum);
+                    i++;
+                    startingIndex++;
+                    tokens.add(i, "=");
+                    i++;
+                    startingIndex++;
+                    tokens.add(i, "#" + (this.finalVarnum-1));
+                    i++;
+                    startingIndex++;
+                    tokens.add(i, ",");
+                    i++;
+                    startingIndex++;
+                    tokens.add(i, tokens.get(startingIndex+1));
+                    i++;
+                    startingIndex++;
+                    tokens.add(i, ";");
+                    i++;
+                    startingIndex++;
+                    tokens.set(startingIndex+1, "#" + this.finalVarnum);
+
+                    this.finalVarnum++;
+
+                    i = startingIndex-2;
+                    boolean found = false;
+                    while (i > 0){
+                        switch(tokens.get(i)){
+                            case ":":
+                            case ";":
+                            case "{":
+                            case "}":
+                                found = true;
+                                break;
+                        }
+                        if (found){
+                            break;
+                        }
+                        tokens.remove(i);
+                        i--;
+                        startingIndex--;
+                    }
+
+                    i = startingIndex;
+                    continue;
+
+                } else {
+                    // need to pass a dummy variable
+                    startingIndex = i;
+
+                    while (i > 0){
+                        if (tokens.get(i).equals(";") || tokens.get(i).equals("{") || tokens.get(i).equals("}") || tokens.get(i).equals(":")){
+                            i++;
+                            break;
+                        }
+                        i--;
+                    }
+
+                    tokens.add(i, "def");
+                    i++;
+                    startingIndex++;
+                    tokens.add(i, "#" + this.finalVarnum);
+                    i++;
+                    startingIndex++;
+                    tokens.add(i, ";");
+                    i++;
+                    startingIndex++;
+                    this.finalVarnum++;
+                    tokens.add(i, "def");
+                    i++;
+                    startingIndex++;
+                    tokens.add(i, "#" + this.finalVarnum);
+                    i++;
+                    startingIndex++;
+                    tokens.add(i, "=");
+                    i++;
+                    startingIndex++;
+                    tokens.add(i, "0");
+                    i++;
+                    startingIndex++;
+                    tokens.add(i, "ref");
+                    i++;
+                    startingIndex++;
+                    tokens.add(i, "#" + (this.finalVarnum-1));
+                    i++;
+                    startingIndex++;
+                    tokens.add(i, ",");
+                    i++;
+                    startingIndex++;
+                    tokens.add(i, tokens.get(startingIndex+1));
+                    i++;
+                    startingIndex++;
+                    tokens.add(i, ";");
+                    i++;
+                    startingIndex++;
+                    tokens.set(startingIndex+1, "#" + this.finalVarnum);
+                    this.finalVarnum++;
+
+
+                    i = startingIndex;
+                    continue;
+
+                }
+            }
         }
 
 
@@ -1716,6 +1826,7 @@ public class Inliner{
             result.add(tokens.get(i));
         }
 
+        Main.debug(result.toString());
         result = breakMultipleOperations(result);
         result = removeExpressionDelimitters(result);
 
