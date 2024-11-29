@@ -1510,7 +1510,6 @@ public class Inliner{
         System.out.println("Resulting expression: " + postfixExpression.toString());
 
 
-        // TODO: now use the postfix expression to convert this into multiple lines of expressions, one on each line
         ArrayList<String> result = new ArrayList<>();
 
         Stack<String> operandStack = new Stack<>();

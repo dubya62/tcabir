@@ -3,7 +3,7 @@
  */
 
 int getNumberOfOccurances(char* str, char letter){
-    return 2 + 3;
+    2 + 3;
 }
 
 int test(int val){
