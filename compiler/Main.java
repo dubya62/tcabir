@@ -42,6 +42,10 @@ public class Main{
         Inliner inliner = new Inliner(tokens, finalVarnum);
         tokens = inliner.tokens;
 
+        // convert functions into jumps using a stack rather than calls
+        Jumper jumper = new Jumper(tokens, finalVarnum);
+        tokens = jumper.tokens;
+
         // Ignore unnecessary operations
         Ignorer ignorer = new Ignorer(tokens);
         tokens = ignorer.tokens;

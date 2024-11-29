@@ -20,7 +20,6 @@ public class Inliner{
         // convert multitoken operations into single token operations
         this.tokens = combineMultiTokenOperations(this.tokens);
 
-
         // break operations
         this.tokens = breakOperations(this.tokens);
 

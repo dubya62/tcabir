@@ -1,0 +1,24 @@
+initialize a stack (_ = base, | = empty)
+[_||||||||||||||||||||||||||||||||]
+on function call, push the label to jump back to when returning and change rbp and rsp
+[1_|||||||||||||||||||||||||||||||]
+push the arguments to the stack
+[1_234||||||||||||||||||||||||||||]
+jump to the start of the function's code
+allocate space on the stack for the function's variables
+[1_2340|||||||||||||||||||||||||||]
+function will modify by reference using the variable pushed to the stack for the return value
+
+on function call:
+push label to jump back to when return statement happens
+push current rbp
+set rbp to rsp
+push arguments
+increase rsp to contain all possible local variables
+jump to function code
+
+on return statement:
+set rsp to current rbp
+set rbp to previous rbp
+jump back to code before
+
