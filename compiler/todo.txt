@@ -1,0 +1,13 @@
+
+TODO:
+-   Finish rest of function inlining using the stack
+-   Handle heap memory
+-   perform memory safety checking
+
+-   a way to check if two pieces of code are equivalent (using rules)
+-   a way to substitue one piece of code for another
+
+-   A way to convert from IR to C/Cuda after optimizations
+
+-   At some point will need syntax checking and advanced type checking
+

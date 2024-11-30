@@ -40,6 +40,20 @@ public class Jumper{
         //      jmp STACK[RSP-2]
         this.tokens = convertReturnStatements(this.tokens);
 
+        // Scan through the tokens looking for function calls
+        // on function call,
+        //      PUSH <new_label>;
+        //      PUSH RBP;
+        //      RBP = RSP;
+        //      PUSH ARG2;
+        //      PUSH ARG1;
+        //      PUSH ARG0;
+        //      RSP = RSP + <numVars>;
+        //      jmp <function_code>;
+        //      @<new_label>:
+
+        this.tokens = convertFunctionCalls(this.tokens);
+
 
         Main.debug("Jumper is finished!");
         Main.debug("Jumper output:");
@@ -417,6 +431,7 @@ public class Jumper{
         return result;
     }
 
+
     private ArrayList<String> removeExpressionDelimitters(ArrayList<String> tokens){
         ArrayList<String> result = new ArrayList<>();
         for (int i=0; i<tokens.size(); i++){
@@ -426,6 +441,31 @@ public class Jumper{
             result.add(tokens.get(i));
         }
         return result;
+    }
+
+
+    private ArrayList<String> convertFunctionCalls(ArrayList<String> tokens){
+        // Scan through the tokens looking for function calls
+        // on function call,
+        //      PUSH <new_label>;
+        //      PUSH RBP;
+        //      RBP = RSP;
+        //      PUSH ARG2;
+        //      PUSH ARG1;
+        //      PUSH ARG0;
+        //      RSP = RSP + <numVars>;
+        //      jmp <function_code>;
+        //      @<new_label>:
+
+        int lastLabel = 0;
+        for (int i=0; i<tokens.size(); i++){
+            // look for next label value
+            if (tokens.get(i).length() > 0){
+            }
+        }
+
+
+        return tokens;
     }
 
 
