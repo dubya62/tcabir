@@ -31,6 +31,9 @@ void* ArrayList_get(ArrayList* instance, size_t index);
 void ArrayList_remove(ArrayList* instance, size_t index);
 // return the string representation of an ArrayList given a toString() function
 char* ArrayList_toString(ArrayList* instance, char* toStringFunc(void*));
+char* ArrayList_toOnlyString(ArrayList* instance, char* toStirngFunc(void*));
+// empty an ArrayList
+void ArrayList_empty(ArrayList* instance);
 
 
 #endif

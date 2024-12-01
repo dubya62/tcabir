@@ -15,13 +15,14 @@
 
 #include "debug.h"
 #include "lexer.h"
-
+#include "token.h"
 #include "ArrayList.h"
+#include "normalizer.h"
 
 
 // get the filename to compile or throw an error
 int handleCommandLineArguments(int argc, char** argv, char** filename){
-    if (argc < 1){
+    if (argc < 2){
         printf("Please Supply A Filename to Compile...\n");
         return 1;
     }
@@ -31,15 +32,13 @@ int handleCommandLineArguments(int argc, char** argv, char** filename){
     return 0;
 }
 
-char* charToString(void* c){
-    char* result = malloc(sizeof(char) * 2);
-    result[0] = ((char*)c)[0];
-    result[1] = '\0';
-    return result;
-}
+
 
 int main(int argc, char** argv){
     dbg("Hello, World!\n");
+
+
+    dbg("##################################################\n");
 
     // handle the command line arguments
     char* filename;
@@ -58,13 +57,21 @@ int main(int argc, char** argv){
     dbg("\n");
     dbg("Compiling the input file...\n");
 
+    dbg("##################################################\n");
+
     // lex the file and get the tokens
     dbg("\n");
     dbg("Performing Lexical Analysis...\n");
-    char** tokens = performLexicalAnalysis(filename);
+    ArrayList* tokens = performLexicalAnalysis(filename);
     dbg("Lexical Analysis Finshed!\n");
 
+    dbg("##################################################\n");
+
+    // normalize the tokens in the file to a simpler representation
     dbg("\n");
+    dbg("Performing basic normlization...\n");
+    tokens = performBasicNormalization(tokens);
+    dbg("Basic Normalization Finished!\n");
 
 
     return 0;

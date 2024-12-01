@@ -1,10 +1,12 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "debug.h"
 #include "lexer.h"
 #include "ArrayList.h"
+#include "token.h"
 
 // read a file and return its contents
 char* readFile(char* filename){
@@ -37,22 +39,101 @@ char* readFile(char* filename){
 
     dbg("File has successfully been read into memory...\n");
     dbg("File contents:\n");
-    dbg("==============\n");
+    dbg("==============================\n");
     dbg(fileBuffer);
-    dbg("==============\n");
+    dbg("==============================\n");
 
     return fileBuffer;
 }
 
 
+int isBreakChar(char theChar){
+    switch(theChar){
+        case '~':
+        case '!':
+        case '#':
+        case '%':
+        case '^':
+        case '&':
+        case '*':
+        case '(':
+        case ')':
+        case '-':
+        case '+':
+        case '=':
+        case '{':
+        case '}':
+        case '[':
+        case ']':
+        case '|':
+        case '\'':
+        case '"':
+        case ';':
+        case ':':
+        case '/':
+        case '?':
+        case '.':
+        case ',':
+        case '<':
+        case '>':
+        case '\n':
+        case '\t':
+        case '\\':
+        case ' ':
+            return 1;
+    }
+    return 0;
+}
+
+// break a string up into tokens based on the break characters
+ArrayList* breakIntoTokens(char* fileContents){
+    ArrayList* result = ArrayList_malloc(sizeof(Token));
+
+    int i = 0;
+
+    char* currentString = fileContents;
+    int currentLength = 0;
+
+    int currentLineNumber = 1;
+
+    while (1){
+        if (fileContents[i] == '\0'){
+            break;
+        }
+
+        if (isBreakChar(fileContents[i])){
+            Token* newToken;
+            if (currentLength > 0){
+                newToken = (Token*) malloc(sizeof(Token));
+                // create a new Token for the current string
+                newToken->lineNumber = currentLineNumber;
+                newToken->token = (char*) malloc(sizeof(char) * (currentLength+1));
+                memcpy(newToken->token, currentString, currentLength);
+                newToken->token[currentLength] = '\0';
+
+                ArrayList_append(result, newToken);
+            }
+            // create another new token for the current break character
+            newToken = (Token*) malloc(sizeof(Token));
+            newToken->lineNumber = currentLineNumber;
+            newToken->token = (char*) malloc(sizeof(char) * 2);
+            newToken->token[0] = fileContents[i];
+            newToken->token[1] = '\0';
+            ArrayList_append(result, newToken);
+
+            // empty the current string
+            currentString = fileContents+i+1;
+            currentLength = 0;
+        } else {
+            currentLength++;
+        }
+
+        i++;
+    }
 
 
-
-
-
-
-
-
+    return result;
+}
 
 
 
@@ -60,14 +141,32 @@ char* readFile(char* filename){
 ///////////////////////////////////////////////////
 // public functions
 
-char** performLexicalAnalysis(char* filename){
+ArrayList* performLexicalAnalysis(char* filename){
 
     // get the file contents
     dbg("Reading the input file...\n");
     char* fileContents = readFile(filename);
 
     // break the file up into tokens
-    
+    ArrayList* fileTokens = breakIntoTokens(fileContents);
 
-    return NULL;
+    // update the filename of each token
+    for (int i=0; i<ArrayList_length(fileTokens); i++){
+        Token* current = (Token*) (ArrayList_get(fileTokens, i));
+        current->filename = filename;
+    }
+
+    // print debug information
+    char numberOfTokens[1024];
+    snprintf(numberOfTokens, 1024, "%d", fileTokens->length);
+    dbg("\n");
+    dbg("Lexical Analysis Generated "); dbg(numberOfTokens); dbg(" Tokens!\n");
+    dbg("Output of Lexical analysis:\n");
+    dbg("==============================\n");
+    dbg(ArrayList_toString(fileTokens, Token_toString));
+    dbg("\n==============================\n");
+    dbg("\n");
+
+    free(fileContents);
+    return fileTokens;
 }

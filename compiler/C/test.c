@@ -2,6 +2,7 @@
  * Return the number of times that <letter> appears in <str>
  */
 
+
 int getNumberOfOccurances(char* str, char letter){
     2 + letter;
 }

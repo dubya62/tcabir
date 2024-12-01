@@ -13,7 +13,7 @@ ArrayBlock* ArrayBlock_malloc(size_t nmemb, size_t size){
     ArrayBlock* result = (ArrayBlock*) malloc(sizeof(ArrayBlock));
 
     result->length = 0;
-    result->size = size;
+    result->size = nmemb;
     result->data = malloc(nmemb * size);
 
     return result;
@@ -28,7 +28,9 @@ ArrayList* ArrayList_malloc(size_t memberSize){
     result->memberSize = memberSize;
 
     result->blocks = (ArrayBlock*) malloc(sizeof(ArrayBlock));
-    result->blocks[0] = *(ArrayBlock_malloc(memberSize, 1<<DEFAULT_ARRAYLIST_SIZE));
+    ArrayBlock* currentBlock = ArrayBlock_malloc(1<<DEFAULT_ARRAYLIST_SIZE, memberSize);
+    result->blocks[0] = *(currentBlock);
+    free(currentBlock);
 
     return result;
 }
@@ -56,9 +58,16 @@ void ArrayList_append(ArrayList* instance, void* value){
         // we must allocate a new block
         ArrayBlock* newBlocks = (ArrayBlock*) malloc(sizeof(ArrayBlock) * (instance->numberOfBlocks+1));
 
+
         memcpy(newBlocks, instance->blocks, instance->numberOfBlocks * sizeof(ArrayBlock));
+
+        free(instance->blocks);
+        instance->blocks = newBlocks;
+
         // double the size for each new block
-        instance->blocks[instance->numberOfBlocks] = *(ArrayBlock_malloc(1<<(DEFAULT_ARRAYLIST_SIZE + instance->numberOfBlocks), instance->memberSize));
+        ArrayBlock* currentBlock = ArrayBlock_malloc(1<<(DEFAULT_ARRAYLIST_SIZE + instance->numberOfBlocks), instance->memberSize);
+        instance->blocks[instance->numberOfBlocks] = *(currentBlock);
+        free(currentBlock);
         lastBlock = instance->blocks + (instance->numberOfBlocks);
 
         instance->numberOfBlocks++;
@@ -152,6 +161,7 @@ char* ArrayList_toString(ArrayList* instance, char* toStringFunc(void*)){
 
     char* currentValue;
     int k;
+    ArrayList_append(charBuffer, "[");
     for (int i=0; i<instance->numberOfBlocks; i++){
         char* charData = (char*) (instance->blocks[i].data);
         for (int j=0; j<instance->blocks[i].length; j++){
@@ -159,6 +169,8 @@ char* ArrayList_toString(ArrayList* instance, char* toStringFunc(void*)){
             k = 0;
             while (1){
                 if (currentValue[k] == '\0'){
+                    ArrayList_append(charBuffer, ",");
+                    ArrayList_append(charBuffer, " ");
                     break;
                 }
                 ArrayList_append(charBuffer, currentValue+k);
@@ -166,6 +178,7 @@ char* ArrayList_toString(ArrayList* instance, char* toStringFunc(void*)){
             }
         }
     }
+    ArrayList_append(charBuffer, "]");
 
 
     size_t finalBufferLength = charBuffer->length * charBuffer->memberSize + 1;
@@ -185,5 +198,51 @@ char* ArrayList_toString(ArrayList* instance, char* toStringFunc(void*)){
 
     finalBuffer[finalBufferLength-1] = '\0';
     return finalBuffer;
+}
+
+char* ArrayList_toOnlyString(ArrayList* instance, char* toStringFunc(void*)){
+    ArrayList* charBuffer = ArrayList_malloc(sizeof(char));
+
+    char* currentValue;
+    int k;
+    for (int i=0; i<instance->numberOfBlocks; i++){
+        char* charData = (char*) (instance->blocks[i].data);
+        for (int j=0; j<instance->blocks[i].length; j++){
+            currentValue = toStringFunc(charData + (j * instance->memberSize));
+            k = 0;
+            while (1){
+                if (currentValue[k] == '\0'){
+                    break;
+                }
+                ArrayList_append(charBuffer, currentValue+k);
+                k++;
+            }
+        }
+    }
+
+    size_t finalBufferLength = charBuffer->length * charBuffer->memberSize + 1;
+    char* finalBuffer = (char*) malloc(finalBufferLength);
+
+    // concatenate the characters into a single string
+    k = 0;
+    for (int i=0; i<charBuffer->numberOfBlocks; i++){
+        char* charBufferData = (char*) (charBuffer->blocks[i].data);
+        for (int j=0; j<charBuffer->blocks[i].length; j++){
+            finalBuffer[k] = charBufferData[j];
+            k++;
+        }
+    }
+
+    ArrayList_free(charBuffer);
+
+    finalBuffer[finalBufferLength-1] = '\0';
+    return finalBuffer;
+}
+
+void ArrayList_empty(ArrayList* instance){
+    instance->length = 0;
+    for (int i=0; i<instance->numberOfBlocks; i++){
+        instance->blocks[i].length = 0;
+    }
 }
 
