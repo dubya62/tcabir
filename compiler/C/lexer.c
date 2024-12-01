@@ -85,6 +85,7 @@ int isBreakChar(char theChar){
     return 0;
 }
 
+
 // break a string up into tokens based on the break characters
 ArrayList* breakIntoTokens(char* fileContents){
     ArrayList* result = ArrayList_malloc(sizeof(Token));
@@ -102,23 +103,27 @@ ArrayList* breakIntoTokens(char* fileContents){
         }
 
         if (isBreakChar(fileContents[i])){
+
+            if (fileContents[i] == '\n'){
+                currentLineNumber++;
+            }
+
             Token* newToken;
             if (currentLength > 0){
-                newToken = (Token*) malloc(sizeof(Token));
+                char* stringCopy = (char*) malloc(sizeof(char) * (currentLength+1));
+                memcpy(stringCopy, currentString, sizeof(char) * currentLength);
+                stringCopy[currentLength] = '\0';
                 // create a new Token for the current string
+                newToken = stringToToken(stringCopy);
                 newToken->lineNumber = currentLineNumber;
-                newToken->token = (char*) malloc(sizeof(char) * (currentLength+1));
-                memcpy(newToken->token, currentString, currentLength);
-                newToken->token[currentLength] = '\0';
-
                 ArrayList_append(result, newToken);
             }
             // create another new token for the current break character
-            newToken = (Token*) malloc(sizeof(Token));
+            char* breakCharCopy = (char*) malloc(sizeof(char) * 2);
+            breakCharCopy[0] = fileContents[i];
+            breakCharCopy[1] = '\0';
+            newToken = stringToToken(breakCharCopy);
             newToken->lineNumber = currentLineNumber;
-            newToken->token = (char*) malloc(sizeof(char) * 2);
-            newToken->token[0] = fileContents[i];
-            newToken->token[1] = '\0';
             ArrayList_append(result, newToken);
 
             // empty the current string

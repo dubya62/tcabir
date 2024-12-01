@@ -19,6 +19,7 @@
 #include "ArrayList.h"
 #include "normalizer.h"
 
+#include "HashMap.h"
 
 // get the filename to compile or throw an error
 int handleCommandLineArguments(int argc, char** argv, char** filename){
@@ -33,6 +34,9 @@ int handleCommandLineArguments(int argc, char** argv, char** filename){
 }
 
 
+char* intToString(void* value){
+    return (char*) value;
+}
 
 int main(int argc, char** argv){
     dbg("Hello, World!\n");
@@ -72,7 +76,6 @@ int main(int argc, char** argv){
     dbg("Performing basic normlization...\n");
     tokens = performBasicNormalization(tokens);
     dbg("Basic Normalization Finished!\n");
-
 
     return 0;
 }

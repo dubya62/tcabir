@@ -2,8 +2,8 @@ CC := gcc
 CFLAGS := -O3
 DBGFLAGS := -g
 
-OBJECTS := main.o lexer.o ArrayList.o token.o normalizer.o
-SOURCES := main.c lexer.c ArrayList.c token.c normalizer.c
+OBJECTS := main.o lexer.o ArrayList.o token.o normalizer.o HashMap.o
+SOURCES := main.c lexer.c ArrayList.c token.c normalizer.c HashMap.c
 
 test: main
 	@echo "###################################"

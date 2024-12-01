@@ -14,6 +14,22 @@
 //      combining floats into single tokens
 
 
+// return number of backslashes directly before a token
+int getBackslashesBefore(ArrayList* tokens, int index){
+    int backslashes = 0;
+    int j = index-1;
+    while (j > 0){
+        if (Token_equalsString(ArrayList_get(tokens, j), "\\")){
+            backslashes++;
+        } else {
+            break;
+        }
+        j--;
+    }
+    return backslashes;
+}
+
+
 ArrayList* removeComments(ArrayList* tokens){
     dbg("Removing comments from the tokens...\n");
 
@@ -63,13 +79,23 @@ ArrayList* removeComments(ArrayList* tokens){
             if (!quotes && !charQuote){
                 quotes = 1;
             } else if (quotes && !charQuote){
-                quotes = 0;
+                // make sure there are an even number of backslashes before
+                int backslashes = getBackslashesBefore(tokens, i);
+
+                if (backslashes % 2 == 0){
+                    quotes = 0;
+                }
             }
         } else if (Token_equalsString(currentToken, "'")){
             if (!quotes && !charQuote){
                 charQuote = 1;
             } else if (!quotes && charQuote){
-                charQuote = 0;
+                // make sure there are an even number of backslashes before
+                int backslashes = getBackslashesBefore(tokens, i);
+
+                if (backslashes % 2 == 0){
+                    charQuote = 0;
+                }
             }
         }
 
@@ -128,33 +154,43 @@ ArrayList* combineStrings(ArrayList* tokens){
             if (!charQuotes && !quotes){
                 quotes = 1;
             } else if (!charQuotes && quotes){
-                quotes = 0;
-                ArrayList_append(currentString, currentToken);
+                // make sure there are an even number of backslashes before
+                int backslashes = getBackslashesBefore(tokens, i);
 
-                Token* newToken = (Token*) malloc(sizeof(Token));
-                newToken->filename = currentToken->filename;
-                newToken->lineNumber = currentToken->lineNumber;
-                newToken->token = ArrayList_toOnlyString(currentString, Token_toString);
+                if (backslashes % 2 == 0){
+                    quotes = 0;
+                    ArrayList_append(currentString, currentToken);
 
-                ArrayList_append(result, newToken);
-                ArrayList_empty(currentString);
-                continue;
+                    Token* newToken = (Token*) malloc(sizeof(Token));
+                    newToken->filename = currentToken->filename;
+                    newToken->lineNumber = currentToken->lineNumber;
+                    newToken->token = ArrayList_toOnlyString(currentString, Token_toString);
+
+                    ArrayList_append(result, newToken);
+                    ArrayList_empty(currentString);
+                    continue;
+                }
             }
         } else if (Token_equalsString(currentToken, "'")){
             if (!charQuotes && !quotes){
                 charQuotes = 1;
             } else if (charQuotes && !quotes){
-                charQuotes = 0;
-                ArrayList_append(currentString, currentToken);
+                // make sure there are an even number of backslashes before
+                int backslashes = getBackslashesBefore(tokens, i);
 
-                Token* newToken = (Token*) malloc(sizeof(Token));
-                newToken->filename = currentToken->filename;
-                newToken->lineNumber = currentToken->lineNumber;
-                newToken->token = ArrayList_toOnlyString(currentString, Token_toString);
+                if (backslashes % 2 == 0){
+                    charQuotes = 0;
+                    ArrayList_append(currentString, currentToken);
 
-                ArrayList_append(result, newToken);
-                ArrayList_empty(currentString);
-                continue;
+                    Token* newToken = (Token*) malloc(sizeof(Token));
+                    newToken->filename = currentToken->filename;
+                    newToken->lineNumber = currentToken->lineNumber;
+                    newToken->token = ArrayList_toOnlyString(currentString, Token_toString);
+
+                    ArrayList_append(result, newToken);
+                    ArrayList_empty(currentString);
+                    continue;
+                }
             }
         } else if (Token_equalsString(currentToken, "\\")){
             if (i+1 < tokensLength){
@@ -208,7 +244,7 @@ ArrayList* performBasicNormalization(ArrayList* tokens){
 
     // combine floats into single tokens
     // TODO: implement this function
-    tokens = combineFloats(tokens);
+    //tokens = combineFloats(tokens);
 
 
     dbg("Normalizer output:\n");
