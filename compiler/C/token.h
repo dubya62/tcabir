@@ -8,6 +8,7 @@ typedef enum TokenType{
     OPERATOR,
     DELIMITER,
     LITERAL,
+    TYPE,
     UNKNOWN,
 } TokenType;
 

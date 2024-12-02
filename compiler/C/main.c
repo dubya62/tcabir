@@ -21,11 +21,15 @@
 #include "token.h"
 #include "normalizer.h"
 #include "builtins.h"
+#include "simplifier.h"
 
 HashMap* BUILTIN_FUNCTIONS;
 HashMap* OPERATORS;
 HashMap* OPERATOR_PRECEDENCES;
 HashMap* DELIMITERS;
+
+HashMap* TYPES;
+HashMap* VARIABLE_TYPES;
 
 // get the filename to compile or throw an error
 int handleCommandLineArguments(int argc, char** argv, char** filename){
@@ -84,6 +88,13 @@ int main(int argc, char** argv){
     dbg("Performing basic normlization...\n");
     tokens = performBasicNormalization(tokens);
     dbg("Basic Normalization Finished!\n");
+
+    dbg("##################################################\n");
+
+    dbg("\n");
+    dbg("Performing Variable Simplification...\n");
+    tokens = performVariableSimplification(tokens);
+    dbg("Variable Simplification Finished!\n");
 
 
     // memory cleanup

@@ -258,6 +258,8 @@ void initBuiltins(){
     OPERATORS = HashMap_malloc(sizeof(char*), sizeof(int), &stringPrehashFunction, &stringCompareFunction);
     OPERATOR_PRECEDENCES = HashMap_malloc(sizeof(char*), sizeof(int), &stringPrehashFunction, &stringCompareFunction);
     DELIMITERS = HashMap_malloc(sizeof(char*), sizeof(int), &stringPrehashFunction, &stringCompareFunction);
+    TYPES = HashMap_malloc(sizeof(char*), sizeof(int), &stringPrehashFunction, &stringCompareFunction);
+    VARIABLE_TYPES = HashMap_malloc(sizeof(int), sizeof(int), &stringPrehashFunction, &stringCompareFunction);
 
     // handle the builtin functions
     initBuiltinFunctions(BUILTIN_FUNCTIONS);
@@ -270,7 +272,7 @@ void initBuiltins(){
 
     // handle delimiters
     initDelimiters(DELIMITERS);
-    
+
     dbg("Finished Initializing builtins\n");
 }
 
@@ -280,6 +282,9 @@ void freeBuiltins(){
     HashMap_free(OPERATORS);
     HashMap_free(OPERATOR_PRECEDENCES);
     HashMap_free(DELIMITERS);
+
+    HashMap_free(TYPES);
+    HashMap_free(VARIABLE_TYPES);
 }
 
 

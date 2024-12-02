@@ -1,6 +1,8 @@
 #ifndef ARRAYLIST_H
 #define ARRAYLIST_H
 
+#include <stdio.h>
+
 typedef struct ArrayBlock{
     size_t length; // number of elements used
     size_t size; // total spaces
