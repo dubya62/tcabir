@@ -145,6 +145,7 @@ int HashMap_put(HashMap* instance, void* key, void* value){
             } else {
                 // use compare function if one was given
                 if ((*(instance->compareFunction))(key, charKeys + (hash * instance->keySize))){
+                    memcpy(charValues + (hash * instance->valueSize), value, instance->valueSize);
                     return 1;
                 }
             }
@@ -155,6 +156,7 @@ int HashMap_put(HashMap* instance, void* key, void* value){
             instance->status[hash] = FILLED;
             memcpy(charKeys + (hash * instance->keySize), key, instance->keySize);
             memcpy(charValues + (hash * instance->valueSize), value, instance->valueSize);
+            instance->size++;
             break;
         }
     }
@@ -211,6 +213,7 @@ int HashMap_remove(HashMap* instance, void* key){
 
     int index = (location - ((char*) instance->values)) / instance->valueSize;
     instance->status[index] = DELETED;
+    instance->size--;
     return 1;
 }
 

@@ -175,6 +175,20 @@ struct ValueAndType* getValueAndTypeOfString(char* theString){
                 break;
             }
 
+            // check if it is a statement
+            if (HashMap_containsKey(STATEMENTS, theString)){
+                result->type = STATEMENT;
+                result->value = *((int*) HashMap_get(STATEMENTS, theString));
+                break;
+            }
+
+            // check if it is NULL
+            if (!strcmp(theString, "NULL")){
+                result->type = LITERAL;
+                result->value = NULL_LITERAL;
+                break;
+            }
+
             // otherwise, just say it is a variable name (to change later if needed)
             result->type = VARIABLE;
             result->value = 0;

@@ -30,6 +30,7 @@ HashMap* DELIMITERS;
 
 HashMap* TYPES;
 HashMap* VARIABLE_TYPES;
+HashMap* STATEMENTS;
 
 // get the filename to compile or throw an error
 int handleCommandLineArguments(int argc, char** argv, char** filename){

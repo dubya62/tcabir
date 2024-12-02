@@ -9,6 +9,7 @@ typedef enum TokenType{
     DELIMITER,
     LITERAL,
     TYPE,
+    STATEMENT,
     UNKNOWN,
 } TokenType;
 
@@ -92,7 +93,20 @@ typedef enum Literals{
     STRING,
     CHAR,
     INT,
+    NULL_LITERAL,
 } Literals;
+
+typedef enum Statements{
+    RETURN,
+    BREAK,
+    IF,
+    ELSE,
+    FOR,
+    WHILE,
+    SWITCH,
+    CASE,
+    CONTINUE,
+} Statements;
 
 typedef struct Token {
     int type;

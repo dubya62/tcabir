@@ -243,11 +243,41 @@ void initDelimiters(HashMap* delimiters){
 }
 
 
+void initStatements(HashMap* statements){
+    int integerValue = 0;
+
+    integerValue = RETURN;
+    HashMap_put(statements, "return", &integerValue);
+
+    integerValue = BREAK;
+    HashMap_put(statements, "break", &integerValue);
+
+    integerValue = IF;
+    HashMap_put(statements, "if", &integerValue);
+
+    integerValue = ELSE;
+    HashMap_put(statements, "else", &integerValue);
+
+    integerValue = FOR;
+    HashMap_put(statements, "for", &integerValue);
+
+    integerValue = WHILE;
+    HashMap_put(statements, "while", &integerValue);
+
+    integerValue = SWITCH;
+    HashMap_put(statements, "switch", &integerValue);
+
+    integerValue = CONTINUE;
+    HashMap_put(statements, "continue", &integerValue);
+}
+
+
 int stringCompareFunction(void* first, void* second){
     char* firstString = (char*) first;
     char* secondString = (char*) second;
     return !strcmp(firstString, secondString);
 }
+
 
 // initialize the builtin HashMaps
 void initBuiltins(){
@@ -259,7 +289,8 @@ void initBuiltins(){
     OPERATOR_PRECEDENCES = HashMap_malloc(sizeof(char*), sizeof(int), &stringPrehashFunction, &stringCompareFunction);
     DELIMITERS = HashMap_malloc(sizeof(char*), sizeof(int), &stringPrehashFunction, &stringCompareFunction);
     TYPES = HashMap_malloc(sizeof(char*), sizeof(int), &stringPrehashFunction, &stringCompareFunction);
-    VARIABLE_TYPES = HashMap_malloc(sizeof(int), sizeof(int), &stringPrehashFunction, &stringCompareFunction);
+    VARIABLE_TYPES = HashMap_malloc(sizeof(int), sizeof(int), &stringPrehashFunction, NULL);
+    STATEMENTS = HashMap_malloc(sizeof(char*), sizeof(int), &stringPrehashFunction, &stringCompareFunction);
 
     // handle the builtin functions
     initBuiltinFunctions(BUILTIN_FUNCTIONS);
@@ -272,6 +303,9 @@ void initBuiltins(){
 
     // handle delimiters
     initDelimiters(DELIMITERS);
+
+    // handle statments
+    initStatements(STATEMENTS);
 
     dbg("Finished Initializing builtins\n");
 }

@@ -67,7 +67,6 @@ void ArrayList_append(ArrayList* instance, void* value){
         // double the size for each new block
         ArrayBlock* currentBlock = ArrayBlock_malloc(1<<(DEFAULT_ARRAYLIST_SIZE + instance->numberOfBlocks), instance->memberSize);
         instance->blocks[instance->numberOfBlocks] = *(currentBlock);
-        free(currentBlock);
         lastBlock = instance->blocks + (instance->numberOfBlocks);
 
         instance->numberOfBlocks++;
@@ -114,16 +113,18 @@ void ArrayList_insert(ArrayList* instance, size_t index, void* value){
                     blockData = (char*) (instance->blocks[currentBlock].data);
                     if (!first){
                         memcpy(instance->blocks[currentBlock+1].data, blockData + (instance->blocks[currentBlock].length-1), instance->memberSize);
-                    } else {
-                        instance->blocks[currentBlock].length++;
-                    }
-                    memmove(blockData, blockData + instance->memberSize, instance->blocks[currentBlock].length * instance->memberSize);
+                        instance->blocks[currentBlock+1].length++;
+                        instance->blocks[currentBlock].length--;
+                    } 
+                    memmove(blockData + instance->memberSize, blockData, instance->blocks[currentBlock].length * instance->memberSize);
                     currentBlock--;
                     first = 0;
                 }
                 blockData = (char*) (instance->blocks[currentBlock].data);
-                memmove(blockData + withinIndex * instance->memberSize, blockData + (withinIndex + 1) * instance->memberSize, (instance->blocks[currentBlock].length - withinIndex) * instance->memberSize);
-                memcpy(blockData + withinIndex, value, instance->memberSize);
+                memmove(blockData + (withinIndex+1) * instance->memberSize, blockData + withinIndex * instance->memberSize, (instance->blocks[currentBlock].length - withinIndex) * instance->memberSize);
+                memcpy(blockData + withinIndex * instance->memberSize, value, instance->memberSize);
+                instance->blocks[currentBlock].length++;
+                instance->length++;
                 break;
             } else {
                 currentBlock++;
