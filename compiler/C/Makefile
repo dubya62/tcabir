@@ -1,26 +1,41 @@
-CC := gcc
-CFLAGS := -O3
-DBGFLAGS := -g
 
-OBJECTS := main.o lexer.o ArrayList.o token.o normalizer.o HashMap.o builtins.o simplifier.o
-SOURCES := main.c lexer.c ArrayList.c token.c normalizer.c HashMap.c builtins.c simplifier.c
+BINARY :=bin
 
-test: main
-	@echo "###################################"
-	./$< test.c
-	@echo "###################################"
-	@echo
+TESTFILE :=tests/test.c
 
-main: $(OBJECTS)
-	$(CC) $(CFLAGS) -o $@ $^
+CC :=gcc
 
-debug: $(SOURCES)
-	$(CC) -o $@ -g $^
+OPT :=-O3
 
-%.o: %.c
-	$(CC) $(CFLAGS) -o $@ $^ -c
+INCDIRS :=. ./include
+CODEDIRS :=. ./lib
+OBJDIRS :=objects
+
+INCFLAGS :=$(foreach D, $(INCDIRS), -I$(D))
+CFLAGS :=$(OPT) $(INCFLAGS)
+DBGFLAGS :=$(INCFLAGS) -g
+
+SOURCES :=$(foreach D, $(CODEDIRS), $(wildcard $(D)/*.c))
+OBJECTS :=$(patsubst ./%.c, objects/%.o, $(SOURCES))
+
+all: $(BINARY)
+
+test: $(BINARY) $(TESTFILE)
+	./$(BINARY) $(TESTFILE)
+
+debug: CFLAGS :=$(DBGFLAGS)
+debug: $(BINARY)
+	gdb $(BINARY)
+
+$(BINARY): $(OBJECTS)
+	$(CC) -o $@ $(OBJECTS) $(CFLAGS)
+
+objects/%.o: %.c
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
-	rm -rf *.o
-	rm main
-	rm debug
+	-rm $(BINARY)
+	-rm $(OBJECTS)
+
+
