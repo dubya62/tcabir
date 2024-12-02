@@ -1,5 +1,7 @@
 
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "normalizer.h"
 #include "ArrayList.h"
@@ -166,6 +168,9 @@ ArrayList* combineStrings(ArrayList* tokens){
                     newToken->lineNumber = currentToken->lineNumber;
                     newToken->token = ArrayList_toOnlyString(currentString, Token_toString);
 
+                    newToken->type = LITERAL;
+                    newToken->value = STRING;
+
                     ArrayList_append(result, newToken);
                     ArrayList_empty(currentString);
                     continue;
@@ -186,6 +191,9 @@ ArrayList* combineStrings(ArrayList* tokens){
                     newToken->filename = currentToken->filename;
                     newToken->lineNumber = currentToken->lineNumber;
                     newToken->token = ArrayList_toOnlyString(currentString, Token_toString);
+
+                    newToken->type = LITERAL;
+                    newToken->value = CHAR;
 
                     ArrayList_append(result, newToken);
                     ArrayList_empty(currentString);
@@ -226,12 +234,58 @@ ArrayList* combineStrings(ArrayList* tokens){
 }
 
 
+ArrayList* combineFloats(ArrayList* tokens){
+    dbg("Combining Floats into single tokens...\n");
+    ArrayList* result = ArrayList_malloc(tokens->memberSize);
 
+    int tokensLength = ArrayList_length(tokens);
+    for (int i=0; i<tokensLength; i++){
+        Token* currentToken = (Token*) ArrayList_get(tokens, i);
+        if (currentToken->type == LITERAL && currentToken->value == INT){
+            if (i + 2 < tokensLength){
+                // next token should be a dot and the next be another integer literal
+                Token* nextToken = (Token*) ArrayList_get(tokens, i+1);
+                Token* theNextToken = (Token*) ArrayList_get(tokens, i+2);
+                if (nextToken->type == OPERATOR && nextToken->value == DOT){
+                    if (theNextToken->type == LITERAL && theNextToken->value == INT){
+                        // append a new token that is these three tokens concatenated
+                        int bufferLen = strlen(currentToken->token) + strlen(nextToken->token) + strlen(theNextToken->token) + 1;
+                        char* newTokenValue = (char*) malloc(sizeof(char) * bufferLen);
+                        newTokenValue[0] = '\0';
 
+                        strcat(newTokenValue, currentToken->token);
+                        strcat(newTokenValue, nextToken->token);
+                        strcat(newTokenValue, theNextToken->token);
 
+                        free(currentToken->token);
+                        currentToken->token = newTokenValue;
 
+                        // update the state information
+                        currentToken->type = LITERAL;
+                        currentToken->value = FLOAT;
 
+                        ArrayList_append(result, currentToken);
+                        // skip the next two tokens since we combined
+                        i++;
+                        i++;
+                        continue;
+                    }
+                }
+            }
+        }
+        ArrayList_append(result, currentToken);
+    }
 
+    ArrayList_free(tokens);
+
+    dbg("Finished Combining Floats Into Single Tokens!\n");
+    dbg("With Floats Combined:\n");
+    dbg("==============================\n");
+    dbg(ArrayList_toString(result, Token_toString));
+    dbg("\n==============================\n");
+
+    return result;
+}
 
 
 ArrayList* performBasicNormalization(ArrayList* tokens){
@@ -243,8 +297,7 @@ ArrayList* performBasicNormalization(ArrayList* tokens){
     tokens = combineStrings(tokens);
 
     // combine floats into single tokens
-    // TODO: implement this function
-    //tokens = combineFloats(tokens);
+    tokens = combineFloats(tokens);
 
 
     dbg("Normalizer output:\n");

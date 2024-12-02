@@ -16,9 +16,13 @@ typedef enum HashMapStatuses{
 #define NUMBER_OF_PRIMES 13
 int PRIMES[] = {233, 991, 3709, 16111, 61297, 221987, 892049, 3196507, 15266369, 56070719, 245156719, 1056272471, 4038711613};
 
+
 // create a HashMap
-HashMap* HashMap_malloc(size_t keySize, size_t valueSize){
+HashMap* HashMap_malloc(size_t keySize, size_t valueSize, size_t (*prehashFunction)(void*), int (*compareFunction)(void*, void*)){
     HashMap* result = (HashMap*) malloc(sizeof(HashMap));
+
+    result->prehashFunction = prehashFunction;
+    result->compareFunction = compareFunction;
 
     result->currentPrime = 0;
     result->size = 0;
@@ -75,6 +79,8 @@ void HashMap_rehash(HashMap* instance){
 
 
     HashMap* newMap = (HashMap*) malloc(sizeof(HashMap));
+    newMap->prehashFunction = instance->prehashFunction;
+    newMap->compareFunction = instance->compareFunction;
     newMap->currentPrime = instance->currentPrime + 1;
     newMap->size = 0;
     newMap->space = PRIMES[instance->currentPrime];
@@ -117,7 +123,12 @@ int HashMap_put(HashMap* instance, void* key, void* value){
     }
 
     // get the prehash value of the key
-    size_t prehash = hashKey(instance->keySize, key);
+    size_t prehash;
+    if (instance->prehashFunction == NULL){
+        prehash = hashKey(instance->keySize, key);
+    } else {
+        prehash = (*(instance->prehashFunction))(key);
+    }
     size_t hash = prehash % instance->space;
 
     // use linear probing to find a valid spot
@@ -127,8 +138,15 @@ int HashMap_put(HashMap* instance, void* key, void* value){
     while (1){
         if (instance->status[hash] == FILLED){
             // continue probing
-            if (!memcmp(key, charKeys + (hash * instance->keySize), instance->keySize)){
-                return 1;
+            if (instance->compareFunction == NULL){
+                if (!memcmp(key, charKeys + (hash * instance->keySize), instance->keySize)){
+                    return 1;
+                }
+            } else {
+                // use compare function if one was given
+                if ((*(instance->compareFunction))(key, charKeys + (hash * instance->keySize))){
+                    return 1;
+                }
             }
             hash++;
             hash %= instance->space;
@@ -146,7 +164,12 @@ int HashMap_put(HashMap* instance, void* key, void* value){
 // get a value from a hashmap by key
 void* HashMap_get(HashMap* instance, void* key){
     // get the prehash value of the key
-    size_t prehash = hashKey(instance->keySize, key);
+    size_t prehash;
+    if (instance->prehashFunction == NULL){
+        prehash = hashKey(instance->keySize, key);
+    } else {
+        prehash = (*(instance->prehashFunction))(key);
+    }
     size_t hash = prehash % instance->space;
     size_t lastCheck = hash - 1;
     if (lastCheck < 0){
@@ -162,8 +185,14 @@ void* HashMap_get(HashMap* instance, void* key){
             return NULL;
         }
 
-        if (!memcmp(key, charKeys + (hash * instance->keySize), instance->keySize)){
-            return charValues + (hash * instance->valueSize);
+        if (instance->compareFunction == NULL){
+            if (!memcmp(key, charKeys + (hash * instance->keySize), instance->keySize)){
+                return charValues + (hash * instance->valueSize);
+            }
+        } else {
+            if ((*(instance->compareFunction))(key, charKeys + (hash * instance->keySize))){
+                return charValues + (hash * instance->valueSize);
+            }
         }
 
         hash++;
@@ -191,13 +220,20 @@ int HashMap_containsKey(HashMap* instance, void* key){
     return HashMap_get(instance, key) != NULL;
 }
 
-char* returnSelf(void* self){
+char* selfToString(void* self){
     return (char*) self;
 }
 
 // convert a HashMap to a String given two toString functions
 char* HashMap_toString(HashMap* instance, char* keyToStringFunc(void*), char* valueToStringFunc(void*)){
     ArrayList* resultList = ArrayList_malloc(sizeof(char*));
+
+    if (keyToStringFunc == NULL){
+        keyToStringFunc = selfToString;
+    }
+    if (valueToStringFunc == NULL){
+        valueToStringFunc = selfToString;
+    }
 
     ArrayList_append(resultList, "{");
     for (int i=0; i<instance->space; i++){
@@ -210,7 +246,7 @@ char* HashMap_toString(HashMap* instance, char* keyToStringFunc(void*), char* va
     }
     ArrayList_append(resultList, "}");
 
-    char* result = ArrayList_toOnlyString(resultList, returnSelf);
+    char* result = ArrayList_toOnlyString(resultList, selfToString);
 
     ArrayList_free(resultList);
     return result;

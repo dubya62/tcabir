@@ -3,6 +3,9 @@
 
 typedef struct HashMap{
     int currentPrime;
+
+    size_t (*prehashFunction)(void*); // function to hash a given input
+    int (*compareFunction)(void*, void*); // function to compare two keys
     
     size_t size; // total filled slots
     size_t space; // max spots
@@ -16,7 +19,7 @@ typedef struct HashMap{
 
 
 // create a HashMap
-HashMap* HashMap_malloc(size_t keySize, size_t valueSize); 
+HashMap* HashMap_malloc(size_t keySize, size_t valueSize, size_t (*prehashFunction)(void*), int (*compareFunction)(void*, void*));
 // free a HashMap's memory
 void HashMap_free(HashMap* instance); 
 // get the number of elements in a HashMap

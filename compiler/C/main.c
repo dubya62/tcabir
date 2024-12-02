@@ -13,13 +13,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "ArrayList.h"
+#include "HashMap.h"
+
 #include "debug.h"
 #include "lexer.h"
 #include "token.h"
-#include "ArrayList.h"
 #include "normalizer.h"
+#include "builtins.h"
 
-#include "HashMap.h"
+HashMap* BUILTIN_FUNCTIONS;
+HashMap* OPERATORS;
+HashMap* OPERATOR_PRECEDENCES;
+HashMap* DELIMITERS;
 
 // get the filename to compile or throw an error
 int handleCommandLineArguments(int argc, char** argv, char** filename){
@@ -58,6 +64,8 @@ int main(int argc, char** argv){
         dbg("\n");
     }
 
+    initBuiltins();
+
     dbg("\n");
     dbg("Compiling the input file...\n");
 
@@ -77,5 +85,8 @@ int main(int argc, char** argv){
     tokens = performBasicNormalization(tokens);
     dbg("Basic Normalization Finished!\n");
 
+
+    // memory cleanup
+    freeBuiltins();
     return 0;
 }

@@ -1,13 +1,31 @@
 
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "token.h"
 #include "string.h"
+#include "builtins.h"
 
 struct ValueAndType{
     int value;
     int type;
 };
+
+
+int isIntegerLiteral(char* theString){
+    int theLength = strlen(theString);
+    if (theLength == 0){
+        return 0;
+    }
+    // Determine if this only contains digits 0-9
+    for (int i=0; i<theLength; i++){
+        if ((int)(theString[i]) > 57 || (int)(theString[i]) < 48){
+            return 0;
+        }
+    }
+
+    return 1;
+}
 
 struct ValueAndType* getValueAndTypeOfString(char* theString){
     struct ValueAndType* result = malloc(sizeof(struct ValueAndType));
@@ -125,6 +143,11 @@ struct ValueAndType* getValueAndTypeOfString(char* theString){
                     result->value = SPACE;
                     break;
                 default:
+                    if (isIntegerLiteral(theString)){
+                        result->type = LITERAL;
+                        result->value = INT;
+                        break;
+                    }
                     result->type = VARIABLE;
                     result->value = 0;
                     break;
@@ -132,10 +155,29 @@ struct ValueAndType* getValueAndTypeOfString(char* theString){
             break;
         default:
             // check if it matches any builtin function names
+            if (HashMap_containsKey(BUILTIN_FUNCTIONS, theString)){
+                result->type = BUILTIN_FUNCTION;
+                result->value = *((int*) HashMap_get(BUILTIN_FUNCTIONS, theString));
+                break;
+            }
+
+            // check if it is a delimiter
+            if (HashMap_containsKey(DELIMITERS, theString)){
+                result->type = DELIMITER;
+                result->value = *((int*) HashMap_get(DELIMITERS, theString));
+                break;
+            }
             
             // check if it is an integer literal
+            if (isIntegerLiteral(theString)){
+                result->type = LITERAL;
+                result->value = INT;
+                break;
+            }
 
             // otherwise, just say it is a variable name (to change later if needed)
+            result->type = VARIABLE;
+            result->value = 0;
 
             break;
     }
