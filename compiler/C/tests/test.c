@@ -15,7 +15,7 @@ int main(void){
 
     int c = getNumberOfOccurances("asdf", 'a');
 
-    char test[5] = {1, 2, 3, 4};
+    char tes[5] = {1, 2, 3, 4};
 
 
     return c;

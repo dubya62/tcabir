@@ -287,11 +287,55 @@ ArrayList* combineFloats(ArrayList* tokens){
     return result;
 }
 
+ArrayList* checkDirectiveSyntax(ArrayList* tokens){
+    // make sure there is a newline at the end of compiler directives.
+    // replace the newline with a semicolon
+    int tokensLength = ArrayList_length(tokens);
+    Token* newToken;
+    for (int i=0; i<tokensLength; i++){
+        Token* currentToken = (Token*) ArrayList_get(tokens, i);
+        if (Token_equalsString(currentToken, "#")){
+            // this is a compiler directive
+            // if ; is reached before newline, throw error
+            int fixed = 0;
+            Token* ithToken;
+            while (i < tokensLength){
+                ithToken = (Token*) ArrayList_get(tokens, i);
+                if (Token_equalsString(ithToken, ";")){
+                    error(ithToken, "Preprocessor Directives should end with a newline.");
+                    fixed = 1;
+                    break;
+                } else if (Token_equalsString(ithToken, "\n")){
+                    newToken = stringToToken(";");
+                    newToken->filename = ithToken->filename;
+                    newToken->lineNumber = ithToken->lineNumber;
+                    *((Token*) ArrayList_get(tokens, i)) = *newToken;
+                    fixed = 1;
+                    break;
+                }
+                i++;
+            }
+            if (!fixed){
+                newToken = stringToToken(";");
+                newToken->filename = ithToken->filename;
+                newToken->lineNumber = ithToken->lineNumber;
+                ArrayList_append(tokens, newToken);
+            }
+
+        }
+    }
+
+    return tokens;
+}
+
 
 ArrayList* performBasicNormalization(ArrayList* tokens){
 
     // remove comments and multi-line comments that are not in strings
     tokens = removeComments(tokens);
+
+    // check compiler directive syntax
+    tokens = checkDirectiveSyntax(tokens);
 
     // combine strings into single tokens and remove whitespace
     tokens = combineStrings(tokens);

@@ -14,6 +14,8 @@ extern HashMap* VARIABLE_TYPES; // keep track of the type of each variable (usin
 extern HashMap* STATEMENTS;
 extern HashMap* VARIABLE_NAMES;
 
+// return dynamically allocated copy of string
+char* stringMalloc(char* theString);
 size_t stringPrehashFunction(void* theString);
 int stringCompareFunction(void* first, void* second);
 // initialize the builtin HashMaps

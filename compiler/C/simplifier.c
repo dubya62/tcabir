@@ -12,56 +12,74 @@
 
 void addBuiltinTypes(HashMap* types){
     int currentValue = 0;
+    char* stringValue;
 
-    HashMap_put(types, "char", &currentValue);
+    stringValue = stringMalloc("char");
+    HashMap_put(types, &stringValue, &currentValue);
     currentValue++;
 
-    HashMap_put(types, "int", &currentValue);
+    stringValue = stringMalloc("int");
+    HashMap_put(types, &stringValue, &currentValue);
     currentValue++;
 
-    HashMap_put(types, "float", &currentValue);
+    stringValue = stringMalloc("float");
+    HashMap_put(types, &stringValue, &currentValue);
     currentValue++;
 
-    HashMap_put(types, "double", &currentValue);
+    stringValue = stringMalloc("double");
+    HashMap_put(types, &stringValue, &currentValue);
     currentValue++;
 
-    HashMap_put(types, "short", &currentValue);
+    stringValue = stringMalloc("short");
+    HashMap_put(types, &stringValue, &currentValue);
     currentValue++;
 
-    HashMap_put(types, "void", &currentValue);
+    stringValue = stringMalloc("void");
+    HashMap_put(types, &stringValue, &currentValue);
     currentValue++;
 
-    HashMap_put(types, "long", &currentValue);
+    stringValue = stringMalloc("long");
+    HashMap_put(types, &stringValue, &currentValue);
     currentValue++;
 
-    HashMap_put(types, "signed", &currentValue);
+    stringValue = stringMalloc("signed");
+    HashMap_put(types, &stringValue, &currentValue);
     currentValue++;
 
-    HashMap_put(types, "unsigned", &currentValue);
+    stringValue = stringMalloc("unsigned");
+    HashMap_put(types, &stringValue, &currentValue);
     currentValue++;
 
-    HashMap_put(types, "struct", &currentValue);
+    stringValue = stringMalloc("struct");
+    HashMap_put(types, &stringValue, &currentValue);
     currentValue++;
 
-    HashMap_put(types, "size_t", &currentValue);
+    stringValue = stringMalloc("size_t");
+    HashMap_put(types, &stringValue, &currentValue);
     currentValue++;
 
-    HashMap_put(types, "ssize_t", &currentValue);
+    stringValue = stringMalloc("ssize_t");
+    HashMap_put(types, &stringValue, &currentValue);
     currentValue++;
 
-    HashMap_put(types, "const", &currentValue);
+    stringValue = stringMalloc("const");
+    HashMap_put(types, &stringValue, &currentValue);
     currentValue++;
 
-    HashMap_put(types, "[", &currentValue);
+    stringValue = stringMalloc("[");
+    HashMap_put(types, &stringValue, &currentValue);
     currentValue++;
 
-    HashMap_put(types, "*", &currentValue);
+    stringValue = stringMalloc("*");
+    HashMap_put(types, &stringValue, &currentValue);
     currentValue++;
 
-    HashMap_put(types, "]", &currentValue);
+    stringValue = stringMalloc("]");
+    HashMap_put(types, &stringValue, &currentValue);
     currentValue++;
 
-    HashMap_put(types, "&", &currentValue);
+    stringValue = stringMalloc("&");
+    HashMap_put(types, &stringValue, &currentValue);
     currentValue++;
 }
 
@@ -78,7 +96,7 @@ ArrayList* convertTypeTokens(ArrayList* tokens){
         // concatenate types into single tokens and give them a place in the types Map
         Token* currentToken = (Token*) ArrayList_get(tokens, i);
         // this is a builtin or a type already encountered
-        if (HashMap_containsKey(TYPES, currentToken->token)){
+        if (HashMap_containsKey(TYPES, &currentToken->token)){
             // combine any tokens after that can be type tokens
             ArrayList_empty(currentType);
 
@@ -93,14 +111,14 @@ ArrayList* convertTypeTokens(ArrayList* tokens){
             while (i < tokensLength){
                 Token* ithToken = (Token*) ArrayList_get(tokens, i);
 
-                int isType = HashMap_containsKey(TYPES, ithToken->token);
+                int isType = HashMap_containsKey(TYPES, &ithToken->token);
                 // not a type in the case this is &, *, [, ], or comma with nothing before
                 if (ithToken->type == OPERATOR && ArrayList_length(currentType) == 0){
                     isType = 0;
                 }
                 if (isType){
                     ithToken->type = TYPE;
-                    ithToken->value = *((int*) HashMap_get(TYPES, ithToken->token));
+                    ithToken->value = *((int*) HashMap_get(TYPES, &ithToken->token));
                     ArrayList_append(currentType, ithToken);
                     i++;
                 }
@@ -131,11 +149,11 @@ ArrayList* convertTypeTokens(ArrayList* tokens){
 
             // update the value of the $TYPE token and add the type to the HashMap if needed
             Token* changeTypeTokenValue = (Token*) ArrayList_get(result, typeTokenIndex);
-            if (HashMap_containsKey(TYPES, currentToken->token)){
-                changeTypeTokenValue->value = *((int*) HashMap_get(TYPES, currentToken->token));
+            if (HashMap_containsKey(TYPES, &currentToken->token)){
+                changeTypeTokenValue->value = *((int*) HashMap_get(TYPES, &currentToken->token));
             } else {
                 int nextTypeNumber = HashMap_size(TYPES);
-                HashMap_put(TYPES, currentToken->token, &nextTypeNumber);
+                HashMap_put(TYPES, &currentToken->token, &nextTypeNumber);
                 changeTypeTokenValue->value = nextTypeNumber;
             }
             continue;
@@ -306,7 +324,7 @@ ArrayList* createExtraScopes(ArrayList* tokens){
 
     
     // add extra function scopes
-    result = createExtraFunctionScopes(result);
+    //result = createExtraFunctionScopes(result);
 
     dbg("Finished Creating Extra Scopes!\n");
     dbg("With Extra Scopes:\n");
@@ -338,7 +356,7 @@ ArrayList* generalizeVariables(ArrayList* tokens){
             int j = currentScope;
             int foundScope = -1;
             while (j >= 0){
-                if (HashMap_containsKey((HashMap*) ArrayList_get(scopes, j), &(currentToken->token))){
+                if (HashMap_containsKey((HashMap*) ArrayList_get(scopes, j), &currentToken->token)){
                     foundScope = j;
                     break;
                 }
@@ -356,12 +374,13 @@ ArrayList* generalizeVariables(ArrayList* tokens){
                     printf("%s\n", currentToken->token);
                     fatal_error(currentToken, "Variable was used before it was declared.\n");
                 }
+
                 int nextValue = HashMap_size(VARIABLE_NAMES);
-                int tokenLen = strlen(currentToken->token);
-                char* variableName = (char*) malloc(tokenLen+1);
-                strcpy(variableName, currentToken->token);
-                variableName[tokenLen] = '\0';
+
+                char* variableName = stringMalloc(currentToken->token);
                 HashMap_put(VARIABLE_NAMES, &variableName, &nextValue);
+
+                variableName = stringMalloc(currentToken->token);
                 HashMap_put((HashMap*) ArrayList_get(scopes, currentScope), &variableName, &nextValue);
                 currentToken->value = nextValue;
             }

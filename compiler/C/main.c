@@ -93,6 +93,14 @@ int main(int argc, char** argv){
 
     dbg("##################################################\n");
 
+    // handle compiler directives
+    dbg("\n");
+    dbg("Handling Compiler Directives...\n");
+    tokens = performBasicNormalization(tokens);
+    dbg("Compiler Directives Handled!\n");
+
+    dbg("##################################################\n");
+
     dbg("\n");
     dbg("Performing Variable Simplification...\n");
     tokens = performVariableSimplification(tokens);

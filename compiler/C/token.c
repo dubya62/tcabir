@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "HashMap.h"
+
 #include "token.h"
 #include "string.h"
 #include "builtins.h"
@@ -155,16 +157,16 @@ struct ValueAndType* getValueAndTypeOfString(char* theString){
             break;
         default:
             // check if it matches any builtin function names
-            if (HashMap_containsKey(BUILTIN_FUNCTIONS, theString)){
+            if (HashMap_containsKey(BUILTIN_FUNCTIONS, &theString)){
                 result->type = BUILTIN_FUNCTION;
-                result->value = *((int*) HashMap_get(BUILTIN_FUNCTIONS, theString));
+                result->value = *((int*) HashMap_get(BUILTIN_FUNCTIONS, &theString));
                 break;
             }
 
             // check if it is a delimiter
-            if (HashMap_containsKey(DELIMITERS, theString)){
+            if (HashMap_containsKey(DELIMITERS, &theString)){
                 result->type = DELIMITER;
-                result->value = *((int*) HashMap_get(DELIMITERS, theString));
+                result->value = *((int*) HashMap_get(DELIMITERS, &theString));
                 break;
             }
             
@@ -176,9 +178,9 @@ struct ValueAndType* getValueAndTypeOfString(char* theString){
             }
 
             // check if it is a statement
-            if (HashMap_containsKey(STATEMENTS, theString)){
+            if (HashMap_containsKey(STATEMENTS, &theString)){
                 result->type = STATEMENT;
-                result->value = *((int*) HashMap_get(STATEMENTS, theString));
+                result->value = *((int*) HashMap_get(STATEMENTS, &theString));
                 break;
             }
 

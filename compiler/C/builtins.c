@@ -9,9 +9,9 @@
 
 
 size_t stringPrehashFunction(void* theString){
-    char* stringChars = (char*) theString;
+    char* stringChars = *((char**) theString);
 
-    int len = strlen(theString);
+    int len = strlen(stringChars);
     size_t result = 0;
     for (int i=0; i<len; i++){
         result += (size_t) (stringChars[i]);
@@ -25,189 +25,258 @@ char* returnSelf(void* str){
     return (char*) str;
 }
 
+char* stringMalloc(char* theString){
+    int stringLen = strlen(theString);
+    char* result = (char*) malloc(sizeof(char) * (stringLen + 1));
+    strcpy(result, theString);
+    result[stringLen] = '\0';
+    return result;
+}
+
 // handle BUILTIN_FUNCTIONS
 void initBuiltinFunctions(HashMap* builtinFunctions){
     int integerValue = 0;
 
+    char* stringValue;
+
     integerValue = MALLOC;
-    HashMap_put(builtinFunctions, "malloc", &integerValue);
+    stringValue = stringMalloc("malloc");
+    HashMap_put(builtinFunctions, &stringValue, &integerValue);
 
     integerValue = FREE;
-    HashMap_put(builtinFunctions, "free", &integerValue);
+    stringValue = stringMalloc("free");
+    HashMap_put(builtinFunctions, &stringValue, &integerValue);
 
     integerValue = READ;
-    HashMap_put(builtinFunctions, "read", &integerValue);
+    stringValue = stringMalloc("read");
+    HashMap_put(builtinFunctions, &stringValue, &integerValue);
 
     integerValue = WRITE;
-    HashMap_put(builtinFunctions, "write", &integerValue);
+    stringValue = stringMalloc("write");
+    HashMap_put(builtinFunctions,&stringValue, &integerValue);
 
 }
 
 // handle OPERATORS
 void initOperators(HashMap* operators){
     int integerValue = 0;
+    char* stringValue;
 
     integerValue = BITWISE_NOT;
-    HashMap_put(operators, "~", &integerValue);
+    stringValue = stringMalloc("~");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = LOGICAL_NOT;
-    HashMap_put(operators, "!", &integerValue);
+    stringValue = stringMalloc("!");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = HASHTAG;
-    HashMap_put(operators, "#", &integerValue);
+    stringValue = stringMalloc("#");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = MOD;
-    HashMap_put(operators, "%", &integerValue);
+    stringValue = stringMalloc("%");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = XOR;
-    HashMap_put(operators, "^", &integerValue);
+    stringValue = stringMalloc("^");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = BITWISE_AND;
-    HashMap_put(operators, "&", &integerValue);
+    stringValue = stringMalloc("&");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = TIMES;
-    HashMap_put(operators, "*", &integerValue);
+    stringValue = stringMalloc("*");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = REFERENCE;
-    HashMap_put(operators, "ref", &integerValue);
+    stringValue = stringMalloc("ref");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = DEREFERENCE;
-    HashMap_put(operators, "deref", &integerValue);
+    stringValue = stringMalloc("deref");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = OPEN_PARENTHESIS;
-    HashMap_put(operators, "(", &integerValue);
+    stringValue = stringMalloc("(");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = CLOSE_PARENTHESIS;
-    HashMap_put(operators, ")", &integerValue);
+    stringValue = stringMalloc(")");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = MINUS;
-    HashMap_put(operators, "-", &integerValue);
+    stringValue = stringMalloc("-");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = PLUS;
-    HashMap_put(operators, "+", &integerValue);
+    stringValue = stringMalloc("+");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = EQUALS;
-    HashMap_put(operators, "=", &integerValue);
+    stringValue = stringMalloc("=");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = OPEN_BRACES;
-    HashMap_put(operators, "{", &integerValue);
+    stringValue = stringMalloc("{");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = CLOSE_BRACES;
-    HashMap_put(operators, "}", &integerValue);
+    stringValue = stringMalloc("}");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = OPEN_BRACKETS;
-    HashMap_put(operators, "[", &integerValue);
+    stringValue = stringMalloc("[");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = CLOSE_BRACKETS;
-    HashMap_put(operators, "]", &integerValue);
+    stringValue = stringMalloc("]");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = BITWISE_OR;
-    HashMap_put(operators, "|", &integerValue);
+    stringValue = stringMalloc("|");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = SLASH;
-    HashMap_put(operators, "/", &integerValue);
+    stringValue = stringMalloc("/");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = QUESTION_MARK;
-    HashMap_put(operators, "?", &integerValue);
+    stringValue = stringMalloc("?");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = DOT;
-    HashMap_put(operators, ".", &integerValue);
+    stringValue = stringMalloc(".");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = COMMA;
-    HashMap_put(operators, ",", &integerValue);
+    stringValue = stringMalloc(",");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = LESS_THAN;
-    HashMap_put(operators, "<", &integerValue);
+    stringValue = stringMalloc("<");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = GREATER_THAN;
-    HashMap_put(operators, ">", &integerValue);
+    stringValue = stringMalloc(">");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = POSTFIX_INCREMENT;
-    HashMap_put(operators, "post++", &integerValue);
+    stringValue = stringMalloc("post++");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = POSTFIX_DECREMENT;
-    HashMap_put(operators, "post--", &integerValue);
+    stringValue = stringMalloc("post--");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = PREFIX_INCREMENT;
-    HashMap_put(operators, "pre++", &integerValue);
+    stringValue = stringMalloc("pre++");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = PREFIX_DECREMENT;
-    HashMap_put(operators, "pre--", &integerValue);
+    stringValue = stringMalloc("pre--");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = CALL;
-    HashMap_put(operators, "call", &integerValue);
+    stringValue = stringMalloc("call");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = ACCESS;
-    HashMap_put(operators, "access", &integerValue);
+    stringValue = stringMalloc("access");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = ARROW;
-    HashMap_put(operators, "->", &integerValue);
+    stringValue = stringMalloc("->");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = CAST;
-    HashMap_put(operators, "cast", &integerValue);
+    stringValue = stringMalloc("cast");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = UNARY_PLUS;
-    HashMap_put(operators, "plus", &integerValue);
+    stringValue = stringMalloc("plus");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = UNARY_MINUS;
-    HashMap_put(operators, "minus", &integerValue);
+    stringValue = stringMalloc("minus");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = LEFT_SHIFT;
-    HashMap_put(operators, "<<", &integerValue);
+    stringValue = stringMalloc("<<");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = RIGHT_SHIFT;
-    HashMap_put(operators, ">>", &integerValue);
+    stringValue = stringMalloc(">>");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = LESS_THAN_OR_EQUAL_TO;
-    HashMap_put(operators, "<=", &integerValue);
+    stringValue = stringMalloc("<=");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = GREATER_THAN_OR_EQUAL_TO;
-    HashMap_put(operators, ">=", &integerValue);
+    stringValue = stringMalloc(">=");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = EQUAL_EQUAL;
-    HashMap_put(operators, "==", &integerValue);
+    stringValue = stringMalloc("==");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = NOT_EQUAL;
-    HashMap_put(operators, "!=", &integerValue);
+    stringValue = stringMalloc("!=");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = PLUS_EQUALS;
-    HashMap_put(operators, "+=", &integerValue);
+    stringValue = stringMalloc("+=");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = MINUS_EQUALS;
-    HashMap_put(operators, "-=", &integerValue);
+    stringValue = stringMalloc("-=");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = TIMES_EQUALS;
-    HashMap_put(operators, "*=", &integerValue);
+    stringValue = stringMalloc("*=");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = SLASH_EQUALS;
-    HashMap_put(operators, "/=", &integerValue);
+    stringValue = stringMalloc("/=");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = MOD_EQUALS;
-    HashMap_put(operators, "%=", &integerValue);
+    stringValue = stringMalloc("%=");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = LEFT_SHIFT_EQUALS;
-    HashMap_put(operators, "<<=", &integerValue);
+    stringValue = stringMalloc("<<=");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = RIGHT_SHIFT_EQUALS;
-    HashMap_put(operators, ">>=", &integerValue);
+    stringValue = stringMalloc(">>=");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = BITWISE_OR_EQUALS;
-    HashMap_put(operators, "|=", &integerValue);
+    stringValue = stringMalloc("|=");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = BITWISE_AND_EQUALS;
-    HashMap_put(operators, "&=", &integerValue);
+    stringValue = stringMalloc("&=");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = XOR_EQUALS;
-    HashMap_put(operators, "^=", &integerValue);
+    stringValue = stringMalloc("^=");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = LOGICAL_OR_EQUALS;
-    HashMap_put(operators, "||=", &integerValue);
+    stringValue = stringMalloc("||=");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = LOGICAL_AND_EQUALS;
-    HashMap_put(operators, "&&=", &integerValue);
+    stringValue = stringMalloc("&&=");
+    HashMap_put(operators, &stringValue, &integerValue);
 
     integerValue = SIZEOF;
-    HashMap_put(operators, "sizeof", &integerValue);
+    stringValue = stringMalloc("sizeof");
+    HashMap_put(operators, &stringValue, &integerValue);
 
 }
 
@@ -216,65 +285,83 @@ void initOperatorPrecedences(HashMap* operatorPrecedences){ }
 
 void initDelimiters(HashMap* delimiters){
     int integerValue = 0;
+    char* stringValue;
 
     integerValue = SEMICOLON;
-    HashMap_put(delimiters, ";", &integerValue);
+    stringValue = stringMalloc(";");
+    HashMap_put(delimiters, &stringValue, &integerValue);
 
     integerValue = COLON;
-    HashMap_put(delimiters, ":", &integerValue);
+    stringValue = stringMalloc(":");
+    HashMap_put(delimiters, &stringValue, &integerValue);
 
     integerValue = SPACE;
-    HashMap_put(delimiters, " ", &integerValue);
+    stringValue = stringMalloc(" ");
+    HashMap_put(delimiters, &stringValue, &integerValue);
 
     integerValue = NEWLINE;
-    HashMap_put(delimiters, "\n", &integerValue);
+    stringValue = stringMalloc("\n");
+    HashMap_put(delimiters, &stringValue, &integerValue);
 
     integerValue = TAB;
-    HashMap_put(delimiters, "\t", &integerValue);
+    stringValue = stringMalloc("\t");
+    HashMap_put(delimiters, &stringValue, &integerValue);
 
     integerValue = BACKSLASH;
-    HashMap_put(delimiters, "\\", &integerValue);
+    stringValue = stringMalloc("\\");
+    HashMap_put(delimiters, &stringValue, &integerValue);
 
     integerValue = APOSTROPHE;
-    HashMap_put(delimiters, "'", &integerValue);
+    stringValue = stringMalloc("'");
+    HashMap_put(delimiters, &stringValue, &integerValue);
 
     integerValue = QUOTE;
-    HashMap_put(delimiters, "\"", &integerValue);
+    stringValue = stringMalloc("\"");
+    HashMap_put(delimiters, &stringValue, &integerValue);
 }
 
 
 void initStatements(HashMap* statements){
     int integerValue = 0;
+    char* stringValue;
 
     integerValue = RETURN;
-    HashMap_put(statements, "return", &integerValue);
+    stringValue = stringMalloc("return");
+    HashMap_put(statements, &stringValue, &integerValue);
 
     integerValue = BREAK;
-    HashMap_put(statements, "break", &integerValue);
+    stringValue = stringMalloc("break");
+    HashMap_put(statements, &stringValue, &integerValue);
 
     integerValue = IF;
-    HashMap_put(statements, "if", &integerValue);
+    stringValue = stringMalloc("if");
+    HashMap_put(statements, &stringValue, &integerValue);
 
     integerValue = ELSE;
-    HashMap_put(statements, "else", &integerValue);
+    stringValue = stringMalloc("else");
+    HashMap_put(statements, &stringValue, &integerValue);
 
     integerValue = FOR;
-    HashMap_put(statements, "for", &integerValue);
+    stringValue = stringMalloc("for");
+    HashMap_put(statements, &stringValue, &integerValue);
 
     integerValue = WHILE;
-    HashMap_put(statements, "while", &integerValue);
+    stringValue = stringMalloc("while");
+    HashMap_put(statements, &stringValue, &integerValue);
 
     integerValue = SWITCH;
-    HashMap_put(statements, "switch", &integerValue);
+    stringValue = stringMalloc("switch");
+    HashMap_put(statements, &stringValue, &integerValue);
 
     integerValue = CONTINUE;
-    HashMap_put(statements, "continue", &integerValue);
+    stringValue = stringMalloc("continue");
+    HashMap_put(statements, &stringValue, &integerValue);
 }
 
 
 int stringCompareFunction(void* first, void* second){
-    char* firstString = (char*) first;
-    char* secondString = (char*) second;
+    char* firstString = *((char**) first);
+    char* secondString = *((char**) second);
     return !strcmp(firstString, secondString);
 }
 
