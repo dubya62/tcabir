@@ -43,7 +43,6 @@ void ArrayList_free(ArrayList* instance){
         ArrayBlock_free(instance->blocks + i);
     }
     free(instance->blocks);
-    free(instance);
 }
 
 // get number of elements in an ArrayList

@@ -1,4 +1,6 @@
 
+#include "string.h"
+
 #include "ArrayList.h"
 #include "HashMap.h"
 
@@ -154,6 +156,105 @@ ArrayList* convertTypeTokens(ArrayList* tokens){
 }
 
 
+ArrayList* createExtraFunctionScopes(ArrayList* tokens){
+    ArrayList* result = ArrayList_malloc(tokens->memberSize);
+
+    Token* openParen = stringToToken("(");
+    Token* closeParen = stringToToken(")");
+    Token* openBrace = stringToToken("{");
+    Token* closeBrace = stringToToken("}");
+    Token* semicolon = stringToToken(";");
+
+    int openParens = 0;
+    int openBraces = 0;
+
+    int tokensLength = ArrayList_length(tokens);
+    for (int i=0; i<tokensLength; i++){
+        Token* currentToken = (Token*) ArrayList_get(tokens, i);
+
+        // look for a type followed by a variable,
+        // followed by (...), followed by { or ;
+        if (currentToken->type == TYPE){
+            if (i + 2 < tokensLength){
+                Token* nextToken = ArrayList_get(tokens, i+1);
+                Token* theNextToken = ArrayList_get(tokens, i+2);
+                if (nextToken->type == VARIABLE && theNextToken->type == OPERATOR && theNextToken->value == OPEN_PARENTHESIS){
+                    int j = i+2;
+                    int found = 0;
+                    while (j < tokensLength){
+                        Token* jthToken = (Token*) ArrayList_get(tokens, j);
+
+                        if (jthToken->type == OPERATOR){
+                            switch(jthToken->value){
+                                case OPEN_PARENTHESIS:
+                                    openParens++;
+                                    break;
+                                case CLOSE_PARENTHESIS:
+                                    openParens--;
+                                    if (!openParens){
+                                        // the next token needs to be { or ;
+                                        if (j + 1 < tokensLength && ArrayList_get(tokens, j+1)){
+                                            openBrace->lineNumber = theNextToken->lineNumber;
+                                            openBrace->filename = theNextToken->filename;
+                                            ArrayList_insert(tokens, i+2, openBrace);
+                                            openBrace = stringToToken("{");
+                                            // look for the closing brace and place another } there
+                                            tokensLength++;
+                                            j++;
+                                            int done = 0;
+                                            while (j < tokensLength){
+                                                jthToken = (Token*) ArrayList_get(tokens, j);
+                                                if (jthToken->type == OPERATOR){
+                                                    switch (jthToken->value){
+                                                        case OPEN_BRACES:
+                                                            openBraces++;
+                                                            break;
+                                                        case CLOSE_BRACES:
+                                                            openBraces--;
+                                                            if (!openBraces){
+                                                                closeBrace->filename = jthToken->filename;
+                                                                closeBrace->lineNumber = jthToken->lineNumber;
+                                                                
+                                                                ArrayList_insert(tokens, j, closeBrace);
+                                                                tokensLength++;
+                                                                closeBrace = stringToToken("}");
+                                                                done = 1;
+                                                            }
+                                                            break;
+                                                    }
+                                                }
+                                                if (done){
+                                                    found = 1;
+                                                    break;
+                                                }
+                                                
+                                                j++;
+                                            }
+                                        }
+                                    }
+                                    break;
+                            }
+                        }
+
+                        if (found){
+                            break;
+                        }
+
+                        j++;
+
+                    }
+                }
+            }
+        }
+
+        ArrayList_append(result, currentToken);
+
+    }
+
+    return result;
+}
+
+
 ArrayList* createExtraScopes(ArrayList* tokens){
     dbg("Creating Extra Scopes...\n");
 
@@ -204,8 +305,8 @@ ArrayList* createExtraScopes(ArrayList* tokens){
     }
 
     
-
-    // TODO: add extra function scopes
+    // add extra function scopes
+    result = createExtraFunctionScopes(result);
 
     dbg("Finished Creating Extra Scopes!\n");
     dbg("With Extra Scopes:\n");
@@ -218,9 +319,75 @@ ArrayList* createExtraScopes(ArrayList* tokens){
 
 
 
+ArrayList* generalizeVariables(ArrayList* tokens){
+    int tokensLength = ArrayList_length(tokens);
 
+    ArrayList* scopes = ArrayList_malloc(sizeof(HashMap));
 
+    // [{var1, var2}, {var1, var2}, {var3, var4}]
 
+    HashMap* newHashMap = HashMap_malloc(sizeof(char*), sizeof(int), &stringPrehashFunction, &stringCompareFunction);
+    ArrayList_append(scopes, newHashMap);
+    int currentScope = 0;
+
+    for (int i=0; i<tokensLength; i++){
+        Token* currentToken = (Token*) ArrayList_get(tokens, i);
+
+        if (currentToken->type == VARIABLE){
+            // search through each scope for the variable
+            int j = currentScope;
+            int foundScope = -1;
+            while (j >= 0){
+                if (HashMap_containsKey((HashMap*) ArrayList_get(scopes, j), &(currentToken->token))){
+                    foundScope = j;
+                    break;
+                }
+                j--;
+            }
+
+            if (foundScope != -1){
+                if (i > 0 && ((Token*)ArrayList_get(tokens, i-1))->type == TYPE){
+                    fatal_error(currentToken, "Multiple declarations of same variable in this scope.\n");
+                }
+                currentToken->value = *((int*)HashMap_get(VARIABLE_NAMES, &currentToken->token));
+            } else {
+                // if token before is not $TYPE, it was never declared
+                if (i == 0 || ((Token*)ArrayList_get(tokens, i-1))->type != TYPE){
+                    printf("%s\n", currentToken->token);
+                    fatal_error(currentToken, "Variable was used before it was declared.\n");
+                }
+                int nextValue = HashMap_size(VARIABLE_NAMES);
+                int tokenLen = strlen(currentToken->token);
+                char* variableName = (char*) malloc(tokenLen+1);
+                strcpy(variableName, currentToken->token);
+                variableName[tokenLen] = '\0';
+                HashMap_put(VARIABLE_NAMES, &variableName, &nextValue);
+                HashMap_put((HashMap*) ArrayList_get(scopes, currentScope), &variableName, &nextValue);
+                currentToken->value = nextValue;
+            }
+        } else if (currentToken->type == OPERATOR){
+            switch (currentToken->value){
+                case OPEN_BRACES:
+                    // create a new scope
+                    newHashMap = HashMap_malloc(sizeof(char*), sizeof(int), &stringPrehashFunction, &stringCompareFunction);
+                    ArrayList_append(scopes, newHashMap);
+                    currentScope++;
+                    break;
+                case CLOSE_BRACES:
+                    // destroy last scope
+                    HashMap_free((HashMap*) ArrayList_get(scopes, currentScope));
+                    ArrayList_remove(scopes, currentScope);
+                    currentScope--;
+                    if (currentScope < 0){
+                        fatal_error(currentToken, "Mismatched Braces...");
+                    }
+                    break;
+            }
+        }
+
+    }
+    return tokens;
+}
 
 
 
@@ -232,10 +399,11 @@ ArrayList* performVariableSimplification(ArrayList* tokens){
     // convert tokens in the representation that are these types to the type
     tokens = convertTypeTokens(tokens);
 
-    // TODO: create extra scopes for the sake of variable scoping
+    // create extra scopes for the sake of variable scoping
     tokens = createExtraScopes(tokens);
     
-    // TODO: generalize all variables into numbered variables
+    // generalize all variables into numbered variables
+    tokens = generalizeVariables(tokens);
     
     // TODO: fix the function scoping
 

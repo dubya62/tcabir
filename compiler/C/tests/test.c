@@ -4,10 +4,7 @@
 
 
 int getNumberOfOccurances(char* str, char letter){
-    for (int i=0; i<letter; i++){
-        return 2;
-    }
-    malloc(sizeof(char));
+    return str;
 }
 
 int test(int val){

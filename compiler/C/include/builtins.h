@@ -12,7 +12,10 @@ extern HashMap* DELIMITERS;
 extern HashMap* TYPES; // index the types
 extern HashMap* VARIABLE_TYPES; // keep track of the type of each variable (using the TYPES Map (VARIABLE_NUMBER:TYPE_NUMBER)
 extern HashMap* STATEMENTS;
+extern HashMap* VARIABLE_NAMES;
 
+size_t stringPrehashFunction(void* theString);
+int stringCompareFunction(void* first, void* second);
 // initialize the builtin HashMaps
 void initBuiltins();
 // uninitialize the builtin HashMaps

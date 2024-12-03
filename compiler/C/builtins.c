@@ -291,6 +291,8 @@ void initBuiltins(){
     TYPES = HashMap_malloc(sizeof(char*), sizeof(int), &stringPrehashFunction, &stringCompareFunction);
     VARIABLE_TYPES = HashMap_malloc(sizeof(int), sizeof(int), &stringPrehashFunction, NULL);
     STATEMENTS = HashMap_malloc(sizeof(char*), sizeof(int), &stringPrehashFunction, &stringCompareFunction);
+    VARIABLE_NAMES = HashMap_malloc(sizeof(char*), sizeof(int), &stringPrehashFunction, &stringCompareFunction);
+
 
     // handle the builtin functions
     initBuiltinFunctions(BUILTIN_FUNCTIONS);
@@ -319,6 +321,8 @@ void freeBuiltins(){
 
     HashMap_free(TYPES);
     HashMap_free(VARIABLE_TYPES);
+    HashMap_free(STATEMENTS);
+    HashMap_free(VARIABLE_NAMES);
 }
 
 

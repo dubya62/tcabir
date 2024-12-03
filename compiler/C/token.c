@@ -189,6 +189,12 @@ struct ValueAndType* getValueAndTypeOfString(char* theString){
                 break;
             }
 
+            if (!strcmp(theString, "sizeof")){
+                result->type = OPERATOR;
+                result->value = SIZEOF;
+                break;
+            }
+
             // otherwise, just say it is a variable name (to change later if needed)
             result->type = VARIABLE;
             result->value = 0;

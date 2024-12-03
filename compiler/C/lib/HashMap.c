@@ -48,7 +48,6 @@ void HashMap_free(HashMap* instance){
     free(instance->status);
     free(instance->keys);
     free(instance->values);
-    free(instance);
 }
 
 

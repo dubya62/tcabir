@@ -7,6 +7,7 @@ CC :=gcc
 
 OPT :=-O3
 
+
 INCDIRS :=. ./include
 CODEDIRS :=. ./lib
 OBJDIRS :=objects
@@ -18,13 +19,15 @@ DBGFLAGS :=$(INCFLAGS) -g
 SOURCES :=$(foreach D, $(CODEDIRS), $(wildcard $(D)/*.c))
 OBJECTS :=$(patsubst ./%.c, objects/%.o, $(SOURCES))
 
-all: $(BINARY)
+.PHONY: all FORCE
+
+all: test
 
 test: $(BINARY) $(TESTFILE)
 	./$(BINARY) $(TESTFILE)
 
 debug: CFLAGS :=$(DBGFLAGS)
-debug: $(BINARY)
+debug: clean $(BINARY)
 	gdb $(BINARY)
 
 $(BINARY): $(OBJECTS)
