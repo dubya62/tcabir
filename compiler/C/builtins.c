@@ -361,13 +361,6 @@ void initStatements(HashMap* statements){
     stringValue = stringMalloc("typedef");
     HashMap_put(statements, &stringValue, &integerValue);
 
-    integerValue = AUTO;
-    stringValue = stringMalloc("auto");
-    HashMap_put(statements, &stringValue, &integerValue);
-
-    integerValue = STATIC;
-    stringValue = stringMalloc("static");
-    HashMap_put(statements, &stringValue, &integerValue);
 }
 
 

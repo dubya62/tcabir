@@ -81,10 +81,34 @@ void addBuiltinTypes(HashMap* types){
     stringValue = stringMalloc("&");
     HashMap_put(types, &stringValue, &currentValue);
     currentValue++;
+
+    stringValue = stringMalloc("auto");
+    HashMap_put(types, &stringValue, &currentValue);
+    currentValue++;
+
+    stringValue = stringMalloc("static");
+    HashMap_put(types, &stringValue, &currentValue);
+    currentValue++;
+    
+    stringValue = stringMalloc("register");
+    HashMap_put(types, &stringValue, &currentValue);
+    currentValue++;
+
+    stringValue = stringMalloc("extern");
+    HashMap_put(types, &stringValue, &currentValue);
+    currentValue++;
+    
+    stringValue = stringMalloc("enum");
+    HashMap_put(types, &stringValue, &currentValue);
+    currentValue++;
+
+    stringValue = stringMalloc("union");
+    HashMap_put(types, &stringValue, &currentValue);
+    currentValue++;
 }
 
 
-// TODO: handle typedef tokens
+
 
 ArrayList* convertTypeTokens(ArrayList* tokens){
     dbg("Removing Types...\n");
@@ -109,6 +133,7 @@ ArrayList* convertTypeTokens(ArrayList* tokens){
             typeToken->type = TYPE;
             int typeTokenIndex = ArrayList_length(result);
             ArrayList_append(result, typeToken);
+
             while (i < tokensLength){
                 Token* ithToken = (Token*) ArrayList_get(tokens, i);
 
@@ -168,11 +193,50 @@ ArrayList* convertTypeTokens(ArrayList* tokens){
     dbg("==============================\n");
     dbg(ArrayList_toString(result, Token_toString));
     dbg("\n");
-    dbg(HashMap_toString(TYPES, NULL, NULL));
+    dbg(HashMap_toString(TYPES, &stringToStringFunction, NULL));
     dbg("\n==============================\n");
 
     return result;
 }
+
+
+// handle typedef tokens
+ArrayList* handleTypedefs(ArrayList* tokens){
+    ArrayList* result = ArrayList_malloc(tokens->memberSize);
+
+    dbg("Handling Typedefs...\n");
+    int tokensLength = ArrayList_length(tokens);
+    for (int i=0; i<tokensLength; i++){
+        Token* currentToken = (Token*) ArrayList_get(tokens, i);
+
+        if (currentToken->type == STATEMENT && currentToken->value == TYPEDEF){
+            // this is a typedef
+            // next token should be $TYPE
+            // could be a structure, enum, union, 
+            if (i + 3 >= tokensLength){
+                fatal_error(currentToken, "Expected a type declaration after typdef\n");
+            }
+            Token* nextToken = (Token*) ArrayList_get(tokens, i+1);
+            // next token should be a type
+            if (nextToken->type != TYPE){
+                fatal_error(nextToken, "Expected an existing type after typedef\n");
+            }
+            // if the tokens after's type was struct, 
+
+        }
+
+        ArrayList_append(result, currentToken);
+    }
+
+    dbg("Finished Handling Typedefs!\n");
+    dbg("With Typedefs Handled:\n");
+    dbg("==============================\n");
+    dbg(ArrayList_toString(result, Token_toString));
+    dbg("\n==============================\n");
+
+    return result;
+}
+
 
 
 ArrayList* createExtraFunctionScopes(ArrayList* tokens){
@@ -418,6 +482,9 @@ ArrayList* performVariableSimplification(ArrayList* tokens){
 
     // convert tokens in the representation that are these types to the type
     tokens = convertTypeTokens(tokens);
+
+    // handle typedefs
+    tokens = handleTypedefs(tokens);
 
     // create extra scopes for the sake of variable scoping
     tokens = createExtraScopes(tokens);

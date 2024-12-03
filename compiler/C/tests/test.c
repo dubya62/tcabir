@@ -2,8 +2,10 @@
  * Return the number of times that <letter> appears in <str>
  */
 
-#include <stdio.h>
-#include "ArrayList.h"
+typedef struct TestStruct{
+    int a;
+    int b;
+}
 
 int getNumberOfOccurances(char* str, char letter){
     return str;

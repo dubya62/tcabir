@@ -24,6 +24,7 @@
 #include "builtins.h"
 #include "simplifier.h"
 #include "preprocessor.h"
+#include "converter.h"
 
 HashMap* BUILTIN_FUNCTIONS;
 HashMap* OPERATORS;
@@ -172,6 +173,12 @@ int main(int argc, char** argv){
     tokens = performVariableSimplification(tokens);
     dbg("Variable Simplification Finished!\n");
 
+    dbg("##################################################\n");
+
+    dbg("\n");
+    dbg("Converting Loops...\n");
+    tokens = convertLoops(tokens);
+    dbg("Loop Conversion Finished!\n");
 
     // memory cleanup
     freeBuiltins();

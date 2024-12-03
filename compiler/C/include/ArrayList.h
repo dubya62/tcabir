@@ -37,5 +37,7 @@ char* ArrayList_toOnlyString(ArrayList* instance, char* toStirngFunc(void*));
 // empty an ArrayList
 void ArrayList_empty(ArrayList* instance);
 
+char* stringToStringFunction(void*);
+
 
 #endif
