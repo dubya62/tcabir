@@ -2,6 +2,7 @@
  * Return the number of times that <letter> appears in <str>
  */
 
+#include <stdio.h>
 
 int getNumberOfOccurances(char* str, char letter){
     return str;

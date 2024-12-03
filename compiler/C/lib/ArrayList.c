@@ -155,6 +155,10 @@ void ArrayList_remove(ArrayList* instance, size_t index){
     instance->length--;
 }
 
+char* stringToStringFunction(void* theString){
+    return *((char**) theString);
+}
+
 // return the string representation of an ArrayList given a toString() function
 char* ArrayList_toString(ArrayList* instance, char* toStringFunc(void*)){
     ArrayList* charBuffer = ArrayList_malloc(sizeof(char));
@@ -165,7 +169,11 @@ char* ArrayList_toString(ArrayList* instance, char* toStringFunc(void*)){
     for (int i=0; i<instance->numberOfBlocks; i++){
         char* charData = (char*) (instance->blocks[i].data);
         for (int j=0; j<instance->blocks[i].length; j++){
-            currentValue = toStringFunc(charData + (j * instance->memberSize));
+            if (toStringFunc == NULL){
+                currentValue = stringToStringFunction(charData + (j * instance->memberSize));
+            } else {
+                currentValue = toStringFunc(charData + (j * instance->memberSize));
+            }
             k = 0;
             while (1){
                 if (currentValue[k] == '\0'){

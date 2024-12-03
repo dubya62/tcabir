@@ -50,6 +50,30 @@ void HashMap_free(HashMap* instance){
     free(instance->values);
 }
 
+HashMap* HashMap_copy(HashMap* instance){
+    HashMap* result = (HashMap*) malloc(sizeof(HashMap));
+
+    result->currentPrime = instance->currentPrime;
+    result->size = instance->size;
+    result->space = instance->space;
+
+    result->prehashFunction = instance->prehashFunction;
+    result->compareFunction= instance->compareFunction;
+
+    result->keySize = instance->keySize;
+    result->valueSize = instance->valueSize;
+
+    result->status = (char*) malloc(sizeof(char) * instance->space);
+    result->keys = (char*) malloc(result->keySize * instance->space);
+    result->values = (char*) malloc(result->valueSize * instance->space);
+
+    memcpy(result->status, instance->status, sizeof(char) * instance->space);
+    memcpy(result->keys, instance->keys, result->keySize * instance->space);
+    memcpy(result->values, instance->values, result->valueSize * instance->space);
+
+    return result;
+}
+
 
 // get the number of elements in a HashMap
 int HashMap_size(HashMap* instance){

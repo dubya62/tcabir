@@ -22,6 +22,8 @@ typedef struct HashMap{
 HashMap* HashMap_malloc(size_t keySize, size_t valueSize, size_t (*prehashFunction)(void*), int (*compareFunction)(void*, void*));
 // free a HashMap's memory
 void HashMap_free(HashMap* instance); 
+// Make a deep copy of a Map
+HashMap* HashMap_copy(HashMap* instance); 
 // get the number of elements in a HashMap
 int HashMap_size(HashMap* instance);
 // add a value to a hashmap (return 1 if it was already there)

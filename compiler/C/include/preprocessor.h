@@ -3,6 +3,6 @@
 
 #include "ArrayList.h"
 
-ArrayList* handleCompilerDirectives(ArrayList* tokens);
+ArrayList* handleCompilerDirectives(ArrayList* tokens, ArrayList* includeDirs, HashMap* includedAlready);
 
 #endif
