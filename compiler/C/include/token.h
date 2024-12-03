@@ -106,6 +106,9 @@ typedef enum Statements{
     SWITCH,
     CASE,
     CONTINUE,
+    TYPEDEF,
+    AUTO,
+    STATIC,
 } Statements;
 
 typedef struct Token {

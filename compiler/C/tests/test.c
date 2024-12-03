@@ -3,6 +3,7 @@
  */
 
 #include <stdio.h>
+#include "ArrayList.h"
 
 int getNumberOfOccurances(char* str, char letter){
     return str;

@@ -24,7 +24,7 @@ OBJECTS :=$(patsubst ./%.c, objects/%.o, $(SOURCES))
 all: test
 
 test: $(BINARY) $(TESTFILE)
-	./$(BINARY) $(TESTFILE)
+	./$(BINARY) $(TESTFILE) $(INCFLAGS)
 
 debug: CFLAGS :=$(DBGFLAGS)
 debug: clean $(BINARY)

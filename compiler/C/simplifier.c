@@ -84,6 +84,7 @@ void addBuiltinTypes(HashMap* types){
 }
 
 
+// TODO: handle typedef tokens
 
 ArrayList* convertTypeTokens(ArrayList* tokens){
     dbg("Removing Types...\n");

@@ -158,7 +158,7 @@ int main(int argc, char** argv){
     dbg("##################################################\n");
 
     // handle compiler directives
-    HashMap* includedAlready = HashMap_malloc(sizeof(char*), sizeof(char), stringPrehashFunction, stringCompareFunction); // keep track of filename that have already been included
+    HashMap* includedAlready = HashMap_malloc(sizeof(char*), sizeof(char), &stringPrehashFunction, &stringCompareFunction); // keep track of filename that have already been included
     dbg("\n");
     dbg("Handling Compiler Directives...\n");
     tokens = handleCompilerDirectives(tokens, includeDirs, includedAlready);
