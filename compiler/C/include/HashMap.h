@@ -18,6 +18,9 @@ typedef struct HashMap{
 } HashMap;
 
 
+int stringCompareFunction(void* first, void* second);
+size_t stringPrehashFunction(void* theString);
+
 // create a HashMap
 HashMap* HashMap_malloc(size_t keySize, size_t valueSize, size_t (*prehashFunction)(void*), int (*compareFunction)(void*, void*));
 // free a HashMap's memory

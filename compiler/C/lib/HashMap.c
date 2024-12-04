@@ -16,6 +16,25 @@ typedef enum HashMapStatuses{
 #define NUMBER_OF_PRIMES 13
 int PRIMES[] = {233, 991, 3709, 16111, 61297, 221987, 892049, 3196507, 15266369, 56070719, 245156719, 1056272471, 4038711613};
 
+int stringCompareFunction(void* first, void* second){
+    char* firstString = *((char**) first);
+    char* secondString = *((char**) second);
+    return !strcmp(firstString, secondString);
+}
+
+size_t stringPrehashFunction(void* theString){
+    char* stringChars = *((char**) theString);
+
+    int len = strlen(stringChars);
+    size_t result = 0;
+    for (int i=0; i<len; i++){
+        result += (size_t) (stringChars[i]);
+    }
+
+    return result;
+}
+
+
 
 // create a HashMap
 HashMap* HashMap_malloc(size_t keySize, size_t valueSize, size_t (*prehashFunction)(void*), int (*compareFunction)(void*, void*)){

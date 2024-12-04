@@ -3,7 +3,7 @@
  */
 
 typedef struct TestStruct{
-    int a;
+    int* a(void*);
     int b;
 }
 

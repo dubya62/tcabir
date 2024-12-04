@@ -35,6 +35,7 @@ HashMap* TYPES;
 HashMap* VARIABLE_TYPES;
 HashMap* STATEMENTS;
 HashMap* VARIABLE_NAMES;
+HashMap* STRUCTURES;
 
 char* outputFilename = "a.out";
 ArrayList* includeDirs;

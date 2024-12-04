@@ -4,21 +4,9 @@
 
 #include "HashMap.h"
 
-#include "builtins.h"
 #include "debug.h"
-
-
-size_t stringPrehashFunction(void* theString){
-    char* stringChars = *((char**) theString);
-
-    int len = strlen(stringChars);
-    size_t result = 0;
-    for (int i=0; i<len; i++){
-        result += (size_t) (stringChars[i]);
-    }
-
-    return result;
-}
+#include "builtins.h"
+#include "structure.h"
 
 
 char* returnSelf(void* str){
@@ -364,12 +352,6 @@ void initStatements(HashMap* statements){
 }
 
 
-int stringCompareFunction(void* first, void* second){
-    char* firstString = *((char**) first);
-    char* secondString = *((char**) second);
-    return !strcmp(firstString, secondString);
-}
-
 
 // initialize the builtin HashMaps
 void initBuiltins(){
@@ -384,6 +366,7 @@ void initBuiltins(){
     VARIABLE_TYPES = HashMap_malloc(sizeof(int), sizeof(int), &stringPrehashFunction, NULL);
     STATEMENTS = HashMap_malloc(sizeof(char*), sizeof(int), &stringPrehashFunction, &stringCompareFunction);
     VARIABLE_NAMES = HashMap_malloc(sizeof(char*), sizeof(int), &stringPrehashFunction, &stringCompareFunction);
+    STRUCTURES = HashMap_malloc(sizeof(char*), sizeof(Structure), &stringPrehashFunction, &stringCompareFunction); // name:Structure
 
 
     // handle the builtin functions
@@ -415,6 +398,7 @@ void freeBuiltins(){
     HashMap_free(VARIABLE_TYPES);
     HashMap_free(STATEMENTS);
     HashMap_free(VARIABLE_NAMES);
+    HashMap_free(STRUCTURES);
 }
 
 
