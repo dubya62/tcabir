@@ -118,71 +118,15 @@ ArrayList* convertTypeTokens(ArrayList* tokens){
 
     int tokensLength = ArrayList_length(tokens);
     for (int i=0; i<tokensLength; i++){
-        // concatenate types into single tokens and give them a place in the types Map
         Token* currentToken = (Token*) ArrayList_get(tokens, i);
-        // this is a builtin or a type already encountered
-        if (HashMap_containsKey(TYPES, &currentToken->token)){
-            // combine any tokens after that can be type tokens
-            ArrayList_empty(currentType);
 
-            // while still keeping the types of the arguments/members
-            Token* typeToken = (Token*) malloc(sizeof(Token));
-            typeToken->filename = currentToken->filename;
-            typeToken->lineNumber = currentToken->lineNumber;
-            typeToken->token = "$TYPE";
-            typeToken->type = TYPE;
-            int typeTokenIndex = ArrayList_length(result);
-            ArrayList_append(result, typeToken);
-
-            while (i < tokensLength){
-                Token* ithToken = (Token*) ArrayList_get(tokens, i);
-
-                int isType = HashMap_containsKey(TYPES, &ithToken->token);
-                // not a type in the case this is &, *, [, ], or comma with nothing before
-                if (ithToken->type == OPERATOR && ArrayList_length(currentType) == 0){
-                    isType = 0;
-                }
-                if (isType){
-                    ithToken->type = TYPE;
-                    ithToken->value = *((int*) HashMap_get(TYPES, &ithToken->token));
-                    ArrayList_append(currentType, ithToken);
-                    i++;
-                }
-                if (ithToken->type == LITERAL){
-                    if (ArrayList_length(currentType) > 0){
-                        ArrayList_append(currentType, ithToken);
-                        i++;
-                        continue;
-                    }
-                }
-
-                // if this token is a variable, continue checking after it
-                if (ithToken->type == VARIABLE){
-                    ArrayList_append(result, ithToken);
-                    i++;
-                    continue;
-                }
-
-                if (!isType){
-                    ArrayList_append(result, ithToken);
-                    break;
-                }
-
-            }
-
-            // add this type to the map
-            currentToken->token = ArrayList_toOnlyString(currentType, Token_toString);
-
-            // update the value of the $TYPE token and add the type to the HashMap if needed
-            Token* changeTypeTokenValue = (Token*) ArrayList_get(result, typeTokenIndex);
-            if (HashMap_containsKey(TYPES, &currentToken->token)){
-                changeTypeTokenValue->value = *((int*) HashMap_get(TYPES, &currentToken->token));
-            } else {
-                int nextTypeNumber = HashMap_size(TYPES);
-                HashMap_put(TYPES, &currentToken->token, &nextTypeNumber);
-                changeTypeTokenValue->value = nextTypeNumber;
-            }
-            continue;
+        // if this is a struct, handle inside then outside
+        if (!strcmp(currentToken->token, "struct\0") || !strcmp(currentToken->token, "union\0")){
+                
+        } else if (!strcmp(currentToken->token, "enum\0")){
+            
+        } else {
+            // handle normal functions and normal tokens
         }
 
         ArrayList_append(result, currentToken);

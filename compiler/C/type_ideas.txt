@@ -5,19 +5,17 @@ keep a hashmap with
 {TYPENUMBER:TYPESTRING}
 
 
-struct{
-    int a;
-    int b;
-}
+Handle struct definitions
+    Handle stuff inside the struct first
+    Handle the actual struct
 
-=>
+Handle union definitions
 
-1:struct{int,int} 
-and add an entry to the struct table
+Handle enum definitions
 
+Handle function definitions
 
+Handle basic types
 
-
-
-
+Handle typdefs
 
