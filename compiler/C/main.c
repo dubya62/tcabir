@@ -14,17 +14,16 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "ArrayList.h"
-#include "HashMap.h"
+#include "include/ArrayList.h"
+#include "include/HashMap.h"
 
-#include "debug.h"
-#include "lexer.h"
-#include "token.h"
-#include "normalizer.h"
-#include "builtins.h"
-#include "simplifier.h"
-#include "preprocessor.h"
-#include "converter.h"
+#include "include/debug.h"
+#include "include/lexer.h"
+#include "include/normalizer.h"
+#include "include/builtins.h"
+#include "include/simplifier.h"
+#include "include/preprocessor.h"
+#include "include/converter.h"
 
 HashMap* BUILTIN_FUNCTIONS;
 HashMap* OPERATORS;
@@ -119,7 +118,7 @@ int main(int argc, char** argv){
 
     // Print information gained from command line arguments
     dbg("Parsing the Command Line Arguments...\n");
-    int commandLineArgsError = handleCommandLineArguments(argc, argv);
+    handleCommandLineArguments(argc, argv);
     dbg("Command line arguments parsed successfully!\n");
     dbg("Input filenames: ");
     dbg(ArrayList_toString(inputFiles, NULL));

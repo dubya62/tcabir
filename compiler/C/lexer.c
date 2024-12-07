@@ -3,10 +3,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "debug.h"
-#include "lexer.h"
-#include "ArrayList.h"
-#include "token.h"
+#include "include/debug.h"
+#include "include/lexer.h"
+#include "include/ArrayList.h"
+#include "include/token.h"
 
 // read a file and return its contents
 char* readFile(char* filename){
@@ -164,6 +164,7 @@ ArrayList* performLexicalAnalysis(char* filename){
     // print debug information
     char numberOfTokens[1024];
     snprintf(numberOfTokens, 1024, "%d", fileTokens->length);
+
     dbg("\n");
     dbg("Lexical Analysis Generated "); dbg(numberOfTokens); dbg(" Tokens!\n");
     dbg("Output of Lexical analysis:\n");

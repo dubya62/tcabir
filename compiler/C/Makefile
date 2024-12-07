@@ -8,7 +8,7 @@ CC :=gcc
 OPT :=-O3
 
 
-INCDIRS :=. ./include
+INCDIRS :=.
 CODEDIRS :=. ./lib
 OBJDIRS :=objects
 

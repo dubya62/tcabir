@@ -1,10 +1,9 @@
 
 #include <stdlib.h>
 
-#include "HashMap.h"
+#include "include/HashMap.h"
 
-#include "structure.h"
-#include "token.h"
+#include "include/structure.h"
 
 // allocate memory for a new structure
 Structure* Structure_malloc(){

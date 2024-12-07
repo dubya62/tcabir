@@ -1,13 +1,13 @@
 
-#include "string.h"
+#include <string.h>
 
-#include "ArrayList.h"
-#include "HashMap.h"
+#include "include/ArrayList.h"
+#include "include/HashMap.h"
 
-#include "debug.h"
-#include "token.h"
-#include "builtins.h"
-#include "simplifier.h"
+#include "include/debug.h"
+#include "include/token.h"
+#include "include/builtins.h"
+#include "include/simplifier.h"
 
 
 void addBuiltinTypes(HashMap* types){
@@ -242,11 +242,8 @@ ArrayList* handleTypedefs(ArrayList* tokens){
 ArrayList* createExtraFunctionScopes(ArrayList* tokens){
     ArrayList* result = ArrayList_malloc(tokens->memberSize);
 
-    Token* openParen = stringToToken("(");
-    Token* closeParen = stringToToken(")");
     Token* openBrace = stringToToken("{");
     Token* closeBrace = stringToToken("}");
-    Token* semicolon = stringToToken(";");
 
     int openParens = 0;
     int openBraces = 0;
@@ -345,7 +342,6 @@ ArrayList* createExtraScopes(ArrayList* tokens){
 
     int tokensLength = ArrayList_length(tokens);
     int openBraces = 0;
-    int openedFor = 0;
 
     Token* openBrace = stringToToken("{"); 
     Token* closeBrace = stringToToken("}"); 

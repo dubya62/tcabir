@@ -1,0 +1,23 @@
+Need to remove all types and replace them with $TYPE variables
+
+keep a hashmap with 
+
+{TYPENUMBER:TYPESTRING}
+
+
+struct{
+    int a;
+    int b;
+}
+
+=>
+
+1:struct{int,int} 
+and add an entry to the struct table
+
+
+
+
+
+
+

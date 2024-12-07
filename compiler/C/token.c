@@ -1,12 +1,11 @@
 
 #include <stdlib.h>
-#include <stdio.h>
+#include <string.h>
 
-#include "HashMap.h"
+#include "include/HashMap.h"
 
-#include "token.h"
-#include "string.h"
-#include "builtins.h"
+#include "include/token.h"
+#include "include/builtins.h"
 
 struct ValueAndType{
     int value;
@@ -218,13 +217,17 @@ Token* stringToToken(char* theString){
     result->type = valueAndType->type;
     result->value = valueAndType->value;
 
+    free(valueAndType);
+
     return result;
 }
 
 // return 1 if the token is equivalent to a given string; 0 otherwise
 int Token_equalsString(Token* first, char* theString){
     struct ValueAndType* second = getValueAndTypeOfString(theString);
-    return first->type == second->type && first->value == second->value;
+    int result = first->type == second->type && first->value == second->value;
+    free(second);
+    return result;
 }
 
 // return 1 if the token is equivalent to another token; 0 otherwise

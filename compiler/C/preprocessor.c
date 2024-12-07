@@ -5,15 +5,15 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "ArrayList.h"
-#include "HashMap.h"
+#include "include/ArrayList.h"
+#include "include/HashMap.h"
 
-#include "preprocessor.h"
-#include "token.h"
-#include "debug.h"
+#include "include/preprocessor.h"
+#include "include/token.h"
+#include "include/debug.h"
 
-#include "lexer.h"
-#include "normalizer.h"
+#include "include/lexer.h"
+#include "include/normalizer.h"
 
 
 // TODO

@@ -1,12 +1,12 @@
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "normalizer.h"
-#include "ArrayList.h"
-#include "token.h"
-#include "debug.h"
+#include "include/ArrayList.h"
+
+#include "include/normalizer.h"
+#include "include/token.h"
+#include "include/debug.h"
 
 
 // Basic normalization includes the following:

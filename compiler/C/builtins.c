@@ -2,11 +2,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "HashMap.h"
+#include "include/HashMap.h"
 
-#include "debug.h"
-#include "builtins.h"
-#include "structure.h"
+#include "include/debug.h"
+#include "include/builtins.h"
+#include "include/structure.h"
 
 
 char* returnSelf(void* str){

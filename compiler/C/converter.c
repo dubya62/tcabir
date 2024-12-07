@@ -1,9 +1,9 @@
 
 
-#include "ArrayList.h"
+#include "include/ArrayList.h"
 
-#include "converter.h"
-#include "debug.h"
+#include "include/converter.h"
+#include "include/debug.h"
 
 
 ArrayList* convertElseIfs(ArrayList* tokens){
