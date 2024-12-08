@@ -122,7 +122,25 @@ ArrayList* convertTypeTokens(ArrayList* tokens){
 
         // if this is a struct, handle inside then outside
         if (!strcmp(currentToken->token, "struct\0") || !strcmp(currentToken->token, "union\0")){
-                
+            int returnIndex = i;
+            int openBraces = 0;
+
+            int j = i + 1;
+            // gather tokens inside this struct/union
+            while (j < tokensLength) {
+                Token* jthToken = (Token*) ArrayList_get(tokens, j);
+                if (jthToken->type == OPERATOR){
+                    if (jthToken->value == OPEN_BRACES){
+                        openBraces++;
+                    } else if (jthToken->value == CLOSE_BRACES) {
+                        openBraces--;
+                    }
+                }
+                j++;
+            }
+            // run this function on stuff inside
+
+
         } else if (!strcmp(currentToken->token, "enum\0")){
             
         } else {
