@@ -8,6 +8,9 @@ class Token:
         self.line_number = line_number
         self.filename = filename
 
+    def __eq__(self, other:str):
+        return self.token == other
+
     def __str__(self) -> str:
         return self.token
 

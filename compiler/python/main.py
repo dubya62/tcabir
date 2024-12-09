@@ -5,6 +5,7 @@ from debug import *
 
 import cli_parser
 import lexer
+import normalizer
 
 
 class Main:
@@ -31,6 +32,15 @@ class Main:
         dbg(tokens)
 
         # basic normalization
+        dbg("##############################")
+        dbg("Performing Basic Normalization...")
+        the_normalizer = normalizer.Normalizer(tokens)
+        tokens = the_normalizer.tokens
+
+        dbg("Basic Normalization Finished...")
+        dbg("Resulting Tokens:")
+        dbg(tokens)
+
         # compiler directives
         # simplification
 
