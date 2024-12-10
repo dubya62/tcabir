@@ -1,10 +1,6 @@
 
 
-enum TestEnum {
-    ABC,
-    DEF,
-    GHI,
-};
+#define dbg(message) printf("%s", message)
 
 struct TestStruct{
     int a;

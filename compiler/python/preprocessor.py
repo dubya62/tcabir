@@ -33,6 +33,8 @@ class Preprocessor:
         result = []
 
         # TODO: replace with full solution
+        conditional_stack = []
+        conditional_types = []
         while i < n:
             # handle defined words
             if tokens[i].token in self.definitions:
@@ -54,9 +56,12 @@ class Preprocessor:
                     if len(directive_tokens) == 1:
                         error(directive_tokens[0], "Expected a token after define...")
                     self.definitions[directive_tokens[1].token] = directive_tokens[2:]
-                    dbg("Added definition!")
+                    dbg(f"Added definition! {directive_tokens[1].token} {self.definitions[directive_tokens[1].token]}")
                 elif directive_tokens[0] == "undef":
-                    pass
+                    if len(directive_tokens) == 1:
+                        error(directive_tokens[0], "Expected a token after undef...")
+                    if directive_tokens[1].token in self.definitions:
+                        self.definitions.pop(directive_tokens[1].token)
                 elif directive_tokens[0] == "include":
                     dbg("Including file")
                     new_included_already = included_already.copy()
@@ -66,15 +71,48 @@ class Preprocessor:
                 elif directive_tokens[0] == "pragma":
                     pass
                 elif directive_tokens[0] == "ifndef":
-                    pass
+                    if len(directive_tokens) == 1:
+                        error(directive_tokens[0], "Expected a token after ifndef...")
+                    if directive_tokens[1].token not in self.definitions:
+                        # it is defined. look for 
+                        conditional_stack.append(True)
+                        conditional_types.append("ifndef")
+                    else:
+                        # it is not defined
+                        conditional_stack.append(False)
+                        conditional_types.append("ifndef")
                 elif directive_tokens[0] == "ifdef":
-                    pass
+                    if len(directive_tokens) == 1:
+                        error(directive_tokens[0], "Expected a token after ifdef...")
+                    if directive_tokens[1].token in self.definitions:
+                        # it is defined. look for 
+                        conditional_stack.append(True)
+                        conditional_types.append("ifdef")
+                    else:
+                        # it is not defined
+                        conditional_stack.append(False)
+                        conditional_types.append("ifdef")
+
                 elif directive_tokens[0] == "if":
                     pass
+                elif directive_tokens[0] == "elif":
+                    pass
                 elif directive_tokens[0] == "endif":
-                    pass
+                    if len(conditional_stack) == 0:
+                        fatal_error(directive_tokens[0], "Unmatched endif...")
+                    while len(conditional_stack) > 0:
+                        conditional_stack.pop()
+                        last_type = conditional_types.pop()
+                        if last_type in ["if", "ifdef", "ifndef"]:
+                            break
                 elif directive_tokens[0] == "else":
-                    pass
+                    if len(conditional_stack) == 0:
+                        fatal_error(directive_tokens[0], "No if found before else...")
+                    if conditional_stack[-1]:
+                        conditional_stack.append(False)
+                    else:
+                        conditional_stack.append(True)
+                    conditional_types.append("else")
                 elif directive_tokens[0] == "error":
                     pass
                 elif directive_tokens[0] == "__FILE__":
@@ -93,7 +131,8 @@ class Preprocessor:
                 i += 1
                 continue
 
-            result.append(tokens[i])
+            if len(conditional_stack) == 0 or conditional_stack[-1]:
+                result.append(tokens[i])
 
             i += 1
 

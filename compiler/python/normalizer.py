@@ -102,9 +102,14 @@ class Normalizer:
             if tokens[i] == "#END_DIRECTIVE":
                 fatal_error(tokens[i], "Invalid token")
             elif tokens[i] == "#":
+                definition = False
                 # put #END_DIRECTIVE in place of the newline
                 while i < n:
-                    if tokens[i] == "\n":
+                    if tokens[i] == "define":
+                        definition = True
+                    elif tokens[i] == " " and definition:
+                        tokens[i].token = "DEFINE_SPACE"
+                    elif tokens[i] == "\n":
                         tokens.insert(i, Token("#END_DIRECTIVE", tokens[i].line_number, tokens[i].filename))
                         break;
                     i += 1
