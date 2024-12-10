@@ -1,4 +1,8 @@
 
+#include "test.c"
+
+
+float testVal = 2.4;
 
 // test comment
 #include <stdio.h>

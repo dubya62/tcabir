@@ -6,6 +6,8 @@ from debug import *
 import cli_parser
 import lexer
 import normalizer
+import preprocessor
+import simplifier
 
 
 class Main:
@@ -27,7 +29,7 @@ class Main:
         the_lexer = lexer.Lexer(cli_args.input_files[0])
         tokens = the_lexer.tokens
 
-        dbg("Lexical Anaylsis Finished...")
+        dbg("Lexical Anaylsis Finished!")
         dbg("Resulting Tokens:")
         dbg(tokens)
 
@@ -37,12 +39,30 @@ class Main:
         the_normalizer = normalizer.Normalizer(tokens)
         tokens = the_normalizer.tokens
 
-        dbg("Basic Normalization Finished...")
+        dbg("Basic Normalization Finished!")
         dbg("Resulting Tokens:")
         dbg(tokens)
 
         # compiler directives
+        dbg("##############################")
+        dbg("Handling Compiler Directives...")
+        the_preprocessor = preprocessor.Preprocessor(tokens, cli_args.include_dirs, cli_args.input_files[0])
+        tokens = the_preprocessor.tokens
+
+        dbg("Finished Handling Compiler Directives!")
+        dbg("Resulting Tokens:")
+        dbg(tokens)
+
+
         # simplification
+        dbg("##############################")
+        dbg("Performing Variable Simplification...")
+        the_simplifier = simplifier.Simplifier(tokens)
+        tokens = the_simplifier.tokens
+
+        dbg("Finished Performing Variable Simplification!")
+        dbg("Resulting Tokens:")
+        dbg(tokens)
 
 
 

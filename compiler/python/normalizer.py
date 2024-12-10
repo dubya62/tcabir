@@ -14,8 +14,10 @@ class Normalizer:
         self.tokens = self.check_directive_syntax(self.tokens)
 
         # combine strings into single tokens and remove whitespace
+        self.tokens = self.combine_strings(self.tokens)
 
         # combine floats into single tokens
+        self.tokens = self.combine_floats(self.tokens)
 
 
     def get_backslashes_before(self, tokens, index):
@@ -103,13 +105,91 @@ class Normalizer:
                 # put #END_DIRECTIVE in place of the newline
                 while i < n:
                     if tokens[i] == "\n":
-                        tokens.insert(i, "#END_DIRECTIVE")
+                        tokens.insert(i, Token("#END_DIRECTIVE", tokens[i].line_number, tokens[i].filename))
                         break;
                     i += 1
-                break;
 
             i += 1
 
         return tokens
+
+    
+    def combine_strings(self, tokens:list[Token]) -> list[Token]:
+        dbg("Combining string and char literals to single tokens...")
+
+        i = 0
+        n = len(tokens)
+
+        result = []
+
+        quotes = False
+        char_quotes = False
+
+        while i < n:
+            if tokens[i] == "\"":
+                if not char_quotes and not quotes:
+                    quotes = 1
+                    result.append(tokens[i])
+                    i += 1
+                    continue
+                elif not char_quotes and quotes:
+                    backslashes = self.get_backslashes_before(tokens, i)
+                    if backslashes % 2 == 0:
+                        quotes = False
+                        result[-1].token += tokens[i].token
+                        i += 1
+                        continue
+            elif tokens[i] == "'":
+                if not char_quotes and not quotes:
+                    char_quotes = True
+                    result.append(tokens[i])
+                    i += 1
+                    continue
+                elif char_quotes and not quotes:
+                    backslashes = self.get_backslashes_before(tokens, i)
+                    if backslashes % 2 == 0:
+                        char_quotes = False
+                        result[-1].token += tokens[i].token
+                        i += 1
+                        continue
+            elif tokens[i] == "\\":
+                if i + 1 < n:
+                    if tokens[i+1] == '\n':
+                        i += 2
+                        continue
+
+            if quotes or char_quotes:
+                result[-1].token += tokens[i].token
+            else:
+                if tokens[i].token not in {" ", "\n", "\t"}:
+                    result.append(tokens[i])
+
+            i += 1
+
+        dbg("Finished combining string and char literals to single tokens...")
+        return result
+
+
+    def combine_floats(self, tokens):
+        i = 0
+        n = len(tokens)
+
+        result = []
+
+        while i < n:
+            try:
+                int(tokens[i].token)
+                int(tokens[i+2].token)
+                if tokens[i+1] == ".":
+                    tokens[i].token += tokens[i+1].token + tokens[i+2].token
+                    result.append(tokens[i])
+                    i += 3
+                    continue
+            except:
+                pass
+            result.append(tokens[i])
+            i += 1
+
+        return result 
         
         
