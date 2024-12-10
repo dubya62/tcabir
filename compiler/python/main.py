@@ -65,6 +65,8 @@ class Main:
         dbg(tokens)
 
 
+        dbg("")
+        print_errors()
 
         return 0
 

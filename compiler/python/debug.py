@@ -16,14 +16,19 @@ def error(token:Token, message:str):
     result = "Error: {token.filename}:{token.line_number} at token {token.token}\n\t{message}"
     ERROR.append(result)
 
-def fatal_error(token:Token, message:str):
+def print_errors():
+    dbg(f"{len(ERRORS)} NON-FATAL ERRORS ENCOUNTERED")
     [print(err) for err in ERRORS]
+
+def fatal_error(token:Token, message:str):
+    print_errors()
 
     print(f"Fatal Error: {token.filename}:{token.line_number} at token {token.token}")
     print(f"\t{message}")
 
     print("Encountered fatal error... exiting!")
     exit(1)
+
 
 
 

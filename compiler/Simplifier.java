@@ -201,7 +201,6 @@ public class Simplifier{
         Set<String> builtins = new HashSet<>();
         builtins.addAll(Arrays.asList(builtinArray));
 
-
         int varnum = 0;
         for (int i=0; i<tokens.size(); i++){
             if (tokens.get(i).equals("{")){

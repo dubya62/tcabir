@@ -17,3 +17,8 @@ class Union(Type):
     def __init__(self, types:list[Token], line_number:int, filename:str):
         Type.__init__(self, types, line_number, filename)
         self.token = "$UNION"
+
+class Enum(Type):
+    def __init__(self, types:list[Token], line_number:int, filename:str):
+        Type.__init__(self, types, line_number, filename)
+        self.token = "$ENUM"
