@@ -1,16 +1,15 @@
 
-#include "test.c"
-
-
-float testVal = 2.4;
-
-// test comment
-#include <stdio.h>
-/* another test "
- * #include <stdlib.h>
- */ char buff[23];
+struct TestStruct{
+    int a;
+    int b;
+    char c;
+    struct {
+        int d;
+        int e;
+    };
+};
 
 int main(int argc, char** argv){
-    printf("Hello, World!\n");
+    int test = 4;
     return 0;
 }
