@@ -117,7 +117,6 @@ class Simplifier:
                 n_difference = self.replace_type(tokens, i, builtin_types)
                 n += n_difference
             elif tokens[i].token == "enum":
-                # TODO: handle enums
                 if not (i + 1 < n and tokens[i+1] == "{") and not (i + 2 < n and tokens[i+2] == "{"):
                     i += 1
                     continue
@@ -302,6 +301,8 @@ class Simplifier:
                         break
 
                     i += 1
+                if tokens[i-1] in ["if", "switch", "while", "for"]:
+                    break
                 if done:
                     i += 1
                     continue
@@ -316,7 +317,7 @@ class Simplifier:
                     tokens.insert(the_parenthesis, Token("#FIXFUNC", tokens[the_parenthesis].line_number, tokens[the_parenthesis].filename))
                     i += 1
                     n += 1
-                    tokens.insert(the_parenthesis, Token("{", tokens[the_parenthesis].line_number, tokens[the_parenthesis].filename))
+                    tokens.insert(the_parenthesis+1, Token("{", tokens[the_parenthesis].line_number, tokens[the_parenthesis].filename))
                     i += 1
                     n += 1
                     braces_stack = []
@@ -344,7 +345,7 @@ class Simplifier:
         i = 0
         n = len(tokens)
 
-        builtins = set(["*", "+", "-", "(", ")", ".", "[", "]", "{", "}", "<", ">", ",", "/", "=", "|", "%", "#", "!", "~", "^", "&", ";", ":", "return", "break", "void", "if", "else", "for", "while", "switch", "case", "short", "long", "const", "unsigned", "struct", "signed", "sizeof", "continue", "auto", "register", "static", "$STRUCT", "$UNION", "$ENUM", "$TYPE", "#FIXFUNC"])
+        builtins = set(["*", "+", "-", "(", ")", ".", "[", "]", "{", "}", "<", ">", ",", "/", "=", "|", "%", "#", "!", "~", "^", "&", ";", ":", "?", "return", "break", "void", "if", "else", "for", "while", "switch", "case", "short", "long", "const", "unsigned", "struct", "signed", "sizeof", "continue", "auto", "register", "static", "$STRUCT", "$UNION", "$ENUM", "$TYPE", "#FIXFUNC"])
 
         scopes = [{}]
 
@@ -358,6 +359,19 @@ class Simplifier:
                     fatal_error(tokens[i], "Mismatched }...")
                 scopes.pop()
             elif tokens[i].token not in builtins:
+                # make sure it is not a string, char, or float literal
+                if len(tokens[i].token) > 0:
+                    if tokens[i].token[0] in ['"', "'"]:
+                        i += 1
+                        continue
+                    try:
+                        float(tokens[i].token)
+                        i += 1
+                        continue
+                    except:
+                        pass
+                
+
                 found = False
                 for j in range(len(scopes)-1, -1, -1):
                     if tokens[i].token in scopes[j]:

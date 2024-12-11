@@ -8,6 +8,7 @@ import lexer
 import normalizer
 import preprocessor
 import simplifier
+import converter
 
 
 class Main:
@@ -61,6 +62,16 @@ class Main:
         tokens = the_simplifier.tokens
 
         dbg("Finished Performing Variable Simplification!")
+        dbg("Resulting Tokens:")
+        dbg(tokens)
+
+        # conversion 
+        dbg("##############################")
+        dbg("Performing Conversion...")
+        the_converter = converter.Converter(tokens)
+        tokens = the_converter.tokens
+
+        dbg("Finished Performing Conversion!")
         dbg("Resulting Tokens:")
         dbg(tokens)
 

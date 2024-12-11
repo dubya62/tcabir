@@ -1,15 +1,13 @@
 
 
-#define dbg(message) printf("%s", message)
-
-struct TestStruct{
-    int a;
-};
-
 int main(int argc, char** argv){
-    int test = 4;
-    for (int i=0; i<test; i++){
-        i += 2;
+
+    while (argc < 2){
+        break;
+        for (int i=0; i<10; i++){
+            break;
+        }
+        break;
     }
 
     return 0;

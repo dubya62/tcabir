@@ -32,13 +32,14 @@ class Preprocessor:
 
         result = []
 
-        # TODO: replace with full solution
         conditional_stack = []
         conditional_types = []
         while i < n:
             # handle defined words
             if tokens[i].token in self.definitions:
+                # TODO: handle function-like macros
                 substitution = self.definitions[tokens[i].token]
+                args = []
                 for x in substitution:
                     result.append(x)
                 i += 1
@@ -53,10 +54,39 @@ class Preprocessor:
                     i += 1
 
                 if directive_tokens[0] == "define":
-                    if len(directive_tokens) == 1:
+                    second_start = 0
+                    if len(directive_tokens) < 3:
                         error(directive_tokens[0], "Expected a token after define...")
-                    self.definitions[directive_tokens[1].token] = directive_tokens[2:]
-                    dbg(f"Added definition! {directive_tokens[1].token} {self.definitions[directive_tokens[1].token]}")
+                    if len(directive_tokens) >= 4:
+                        args = []
+                        if directive_tokens[3].token == "(":
+                            # this is a function macro
+                            j = 3
+                            while j < len(directive_tokens):
+                                if directive_tokens[j] == ")":
+                                    if j + 2 < len(directive_tokens):
+                                        second_start = j + 2
+                                        break;
+                                elif directive_tokens[j] not in [",", "("]:
+                                    args.append(directive_tokens[j].token)
+                                j += 1
+
+                            print(directive_tokens)
+                            print(args)
+
+                            k = second_start
+                            while k < len(directive_tokens):
+                                if directive_tokens[k].token in args:
+                                    directive_tokens[k].token = "#" + str(args.index(directive_tokens[k].token))
+                                elif directive_tokens[k].token == "DEFINE_SPACE":
+                                    del directive_tokens[k]
+                                    k -= 1
+                                k += 1
+
+                            print(directive_tokens[second_start:])
+
+                    self.definitions[directive_tokens[2].token] = directive_tokens[second_start:]
+                    dbg(f"Added definition! {directive_tokens[2].token} {self.definitions[directive_tokens[2].token]}")
                 elif directive_tokens[0] == "undef":
                     if len(directive_tokens) == 1:
                         error(directive_tokens[0], "Expected a token after undef...")
