@@ -15,6 +15,8 @@ class Simplifier:
 
         self.typedefs = []
 
+        self.varnum = 1
+
         # convert type tokens
         self.tokens, _ = self.convert_type_tokens(self.tokens, 0, len(self.tokens))
         
@@ -385,6 +387,7 @@ class Simplifier:
             i += 1
 
         dbg("Finished generalizing variables!")
+        self.varnum = varnum
 
         return tokens
         

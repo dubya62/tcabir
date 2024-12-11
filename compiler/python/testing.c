@@ -1,10 +1,13 @@
 
 
+int testFunc(int b){
+    return b;
+}
+
+
 int main(int argc, char** argv){
 
-    while (argc < 2){
-        break;
-    }
+    testFunc(2);
 
     return 0;
 }

@@ -90,10 +90,10 @@ class Converter:
                     fatal_error(tokens[i], "Cannot break outside of loop...")
                 del tokens[i]
                 n -= 1
-                tokens.insert(i, "goto")
+                tokens.insert(i, Token("goto", tokens[i].line_number, tokens[i].filename))
                 n += 1
                 i += 1
-                tokens.insert(i, "@" + str(jump_labels[-1]))
+                tokens.insert(i, Token("@" + str(jump_labels[-1]), tokens[i].line_number, tokens[i].filename))
                 n += 1
                 i += 1
                 continue
@@ -115,17 +115,16 @@ class Converter:
         }
 
         """
-        print(self.current_label)
 
         i = 0
         n = len(tokens)
         while i < n:
             if tokens[i] == "while":
                 tokens[i].token = "if"
-                tokens.insert(i, "@" + str(self.current_label))
+                tokens.insert(i, Token("@" + str(self.current_label), tokens[i].line_number, tokens[i].line_number))
                 i += 1
                 n += 1
-                tokens.insert(i, ":")
+                tokens.insert(i, Token(":", tokens[i].line_number, tokens[i].filename))
                 i += 1
                 n += 1
                 starting_index = i
@@ -142,13 +141,13 @@ class Converter:
                             break;
                     i += 1
 
-                tokens.insert(i, "goto")
+                tokens.insert(i, Token("goto", tokens[i].line_number, tokens[i].filename))
                 i += 1
                 n += 1
-                tokens.insert(i, "@" + str(self.current_label))
+                tokens.insert(i, Token("@" + str(self.current_label, tokens[i].line_number, tokens[i].filename)))
                 i += 1
                 n += 1
-                tokens.insert(i, ";")
+                tokens.insert(i, Token(";", tokens[i].line_number, tokens[i].filname))
                 i += 1
                 n += 1
                 
@@ -178,8 +177,82 @@ class Converter:
 
         while i < n:
             if tokens[i] == "for":
+                tokens[i].token = "if"
+
                 if i + 1 >= n:
                     fatal_error(tokens[i], "Expected ( after for...")
+                if not (tokens[i+1] == "("):
+                    fatal_error(tokens[i+1], "Expected ( after for...")
+                first_start = i + 2
+                first_end = i + 2
+                while first_end < n:
+                    if tokens[first_end] == ";":
+                        break
+                    first_end += 1
+
+                first = tokens[first_start:first_end+1]
+                tokens = tokens[:first_start] + tokens[first_end+1:]
+                n = len(tokens)
+
+                for x in first:
+                    tokens.insert(i, x)
+                    i += 1
+                    n += 1
+                tokens.insert(i, Token("@" + str(self.current_label), tokens[i].line_number, tokens[i].filename))
+                i += 1
+                n += 1
+                tokens.insert(i, Token(":", tokens[i].line_number, tokens[i].filename))
+                i += 1
+                n += 1
+
+                last_start = i + 1
+                while last_start < n:
+                    if tokens[last_start] == ";":
+                        del tokens[last_start]
+                        n -= 1
+                        break
+                    last_start += 1
+                last_end = last_start
+                while last_end < n:
+                    if tokens[last_end] == ")":
+                        break
+                    last_end += 1
+                last = tokens[last_start:last_end]
+                tokens = tokens[:last_start] + tokens[last_end:]
+                n = len(tokens)
+                last_end = last_start
+
+                if len(last) > 0:
+                    last.append(Token(";", last[0].line_number, last[0].filename))
+
+                # put the last stuff just before the ending }
+                braces = []
+                while last_end < n:
+                    if tokens[last_end] == "{":
+                        braces.append("{")
+                    elif tokens[last_end] == "}":
+                        if len(braces) == 0:
+                            fatal_error(tokens[last_end], "Mismatched }...")
+                        braces.pop()
+                        if len(braces) == 0:
+                            for x in last:
+                                tokens.insert(last_end, x)
+                                last_end += 1
+                                n += 1
+                            tokens.insert(last_end, Token("goto", tokens[last_end].line_number, tokens[last_end].filename))
+                            last_end += 1
+                            n += 1
+                            tokens.insert(last_end, Token("@" + str(self.current_label), tokens[last_end].line_number, tokens[last_end].filename))
+                            last_end += 1
+                            n += 1
+                            self.current_label += 1
+                            tokens.insert(last_end, Token(";", tokens[last_end].line_number, tokens[last_end].filename))
+                            last_end += 1
+                            n += 1
+                            break
+                                        
+                    last_end += 1
+
             
 
             i += 1
