@@ -26,8 +26,10 @@ class Operator:
         self.tokens = self.convert_calls_and_accesses(self.tokens)
 
         # convert type casts to use "cast"
+        self.tokens = self.convert_casts(self.tokens)
 
         # break up lines that have more than one operation on them
+        self.tokens = self.break_multiple_operations(self.tokens)
 
         # convert returns
         # int foo(int x){return 3;}
@@ -55,7 +57,7 @@ class Operator:
         """
         remaining tokens:
         $TYPE, $STRUCT, $UNION, $ENUM
-        bitnot, ref, %, ^, &, |, -, +, <, >, *, ==, ., call, access, >>, <<, =, ,, cast
+        bitnot, ref, %, ^, &, |, -, +, <, >, *, /, ==, ., call, access, >>, <<, =, ,, cast
         {, }, ;
         if, else
         goto, @x, #x
@@ -228,7 +230,7 @@ class Operator:
         i = 0
         n = len(tokens)
 
-        operators = set(["~", "!", "%", "^", "&", "|", "-", "+", "<", ">", "*", "+=", "/=", "*=", "<=", ">=", "!=", "==", "%=", "^=", "&=", "|=", "~=", "-=", "->", "&&", "||", "&&=", "||=", ".", "(", "[", ">>", "<<", "<<=", ">>=", "=", ";", "++", "--"])
+        operators = set(["~", "!", "%", "^", "&", "|", "-", "+", "<", ">", "/", "*", "+=", "/=", "*=", "<=", ">=", "!=", "==", "%=", "^=", "&=", "|=", "~=", "-=", "->", "&&", "||", "&&=", "||=", ".", "(", "[", ">>", "<<", "<<=", ">>=", "=", ";", "++", "--"])
         
         while i < n:
             if tokens[i].token in ["++", "--"]:
@@ -521,7 +523,7 @@ class Operator:
     def convert_unary_operators(self, tokens:list[Token]) -> list[Token]:
         unary_operators = {"~":"bitnot", "!":"lognot", "&":"ref", "*":"deref", "-":"un-", "+":"un+"}
 
-        operators = set(["~", "!", "%", "^", "&", "|", "-", "+", "<", ">", "*", "==", "->", "&&", "||", ".", "(", "[", ">>", "<<", "=", ";", "{", "}", "<=", ">=", "!="])
+        operators = set(["~", "!", "%", "^", "&", "|", "-", "+", "/", "<", ">", "*", "==", "->", "&&", "||", ".", "(", "[", ">>", "<<", "=", ";", "{", "}", "<=", ">=", "!="])
 
         i = 0
         n = len(tokens)
@@ -540,7 +542,7 @@ class Operator:
 
 
     def convert_calls_and_accesses(self, tokens:list[Token]) -> list[Token]:
-        operators = set(["bitnot", "lognot", "deref", "ref", "un-", "un+", "%", "^", "&", "|", "-", "+", "<", ">", "*", "==", "->", "&&", "||", ".", "(", "[", ">>", "<<", "=", "!=", "<=", ">="])
+        operators = set(["bitnot", "lognot", "deref", "ref", "un-", "un+", "%", "^", "&", "|", "-", "/", "+", "<", ">", "*", "==", "->", "&&", "||", ".", "(", "[", ">>", "<<", "=", "!=", "<=", ">="])
         # x[y] => x access (y)
         # x(y) => x call (y)
         # x() => x call(#NOTHING)
@@ -570,5 +572,36 @@ class Operator:
         return tokens
 
 
+    def convert_casts(self, tokens:list[Token]) -> list[Token]:
+        i = 0
+        n = len(tokens)
+
+        while i < n:
+            if tokens[i] == "$TYPE":
+                if i > 0 and i + 1 < n and tokens[i-1] == "(" and tokens[i+1] == ")":
+                    del tokens[i-1]
+                    del tokens[i]
+                    tokens.insert(i, Token("cast", tokens[i].line_number, tokens[i].filename))
+                    n -= 1
+
+            i += 1
+
+        return tokens
+
+
+    def break_multiple_operations(self, tokens:list[Token]) -> list[Token]:
+        operators = set(["bitnot", "lognot", "deref", "ref", "un-", "un+", "cast", "%", "^", "&", "|", "-", "+", "/", "<", ">", "*", "==", "->", "&&", "||", ".", "call", "access", ">>", "<<", "="])
+
+        i = 0
+        n = len(tokens)
+        while i < n:
+            
+            i += 1
+        
+
+        return tokens
+
+
+
 if 0:
-    operators = set(["bitnot", "lognot", "deref", "ref", "un-", "un+", "%", "^", "&", "|", "-", "+", "<", ">", "*", "==", "->", "&&", "||", ".", "call", "access", ">>", "<<", "="])
+    operators = set(["bitnot", "lognot", "deref", "ref", "un-", "un+", "cast", "%", "^", "&", "|", "-", "+", "/", "<", ">", "*", "==", "->", "&&", "||", ".", "call", "access", ">>", "<<", "="])
