@@ -13,6 +13,22 @@ class Operator:
         # break operations
         self.tokens = self.break_operations(self.tokens)
 
+        # convert assignment operators
+        # x += 3
+        # =>
+        # x = x + (3)
+        self.tokens = self.convert_assignment_operators(self.tokens)
+
+        # convert unary operators
+        self.tokens = self.convert_unary_operators(self.tokens)
+
+        # convert calls and accesses to use "call" and "access"
+        self.tokens = self.convert_calls_and_accesses(self.tokens)
+
+        # break up lines that have more than one operation on them
+
+
+
         
     def combine_multi_token_operations(self, tokens:list[Token]) -> list[Token]:
 
@@ -182,6 +198,10 @@ class Operator:
         
         while i < n:
             if tokens[i].token in ["++", "--"]:
+                if tokens[i] == "++":
+                    new_operator = "+="
+                else:
+                    new_operator = "-="
                 # figure out if this is prefix or postfix
                 is_prefix = 0
                 if i > 0 and (tokens[i-1].token in ["}", "{", ";", "("] or tokens[i-1].token in operators):
@@ -194,7 +214,7 @@ class Operator:
 
                 if is_prefix:
                     parens = []
-                    j = i + 1
+                    j = i
                     # higher:
                     # function call ()
                     # array subscript []
@@ -205,14 +225,49 @@ class Operator:
                         if tokens[j].token in ["(", "["]:
                             parens.append(tokens[j].token)
                         elif tokens[j] == ")":
-                            pass
+                            if len(parens) == 0:
+                                fatal_error(tokens[j], "Mismatched )...")
+
+                            if len(parens) == 0:
+                                break
                         elif tokens[j] == "]":
-                            pass
+                            if len(parens) == 0:
+                                fatal_error(tokens[j], "Mismatched ]...")
+
+                            if len(parens) == 0:
+                                break
+                        elif tokens[j].token in ["(", "[", ".", "->"]:
+                            inside.append(tokens[j])
+                            j += 1
+                            continue
+
+                        inside.append(tokens[j])
+                        if len(parens) == 0:
+                            if not (j+1 < n and tokens[j+1].token in ["(", "[", ".", "->"]):
+                                break
 
                         j += 1
                     # move to the line before
-                    
-                    pass
+                    j = i
+                    while j >= 0:
+                        print(tokens[j])
+                        if tokens[j].token in ["{", ";", "}"]:
+                            break
+                        j -= 1
+                    j += 1
+
+                    print(f"inside: {inside}")
+
+                    for x in inside:
+                        tokens.insert(j, x)
+                        j += 1; n += 1
+                    tokens.insert(j, Token(new_operator, tokens[j].line_number, tokens[j].filename))
+                    j += 1; n += 1
+                    tokens.insert(j, Token("1", tokens[j].line_number, tokens[j].filename))
+                    j += 1; n += 1
+                    tokens.insert(j, Token(";", tokens[j].line_number, tokens[j].filename))
+                    j += 1; n += 1
+
                 else:
                     j = i - 1
                     parens = []
@@ -243,7 +298,7 @@ class Operator:
                     for x in inside:
                         tokens.insert(j, x)
                         j += 1; n += 1
-                    tokens.insert(j, Token("+=", tokens[j].line_number, tokens[j].filename))
+                    tokens.insert(j, Token(new_operator, tokens[j].line_number, tokens[j].filename))
                     j += 1; n += 1
                     tokens.insert(j, Token("1", tokens[j].line_number, tokens[j].filename))
                     j += 1; n += 1
@@ -282,7 +337,6 @@ class Operator:
                             braces = []
                             current = []
                             while i < n:
-                                print(tokens[i])
                                 if tokens[i].token in ["(", "{"]:
                                     braces.append(tokens[i].token)
                                     if len(braces) == 1:
@@ -382,6 +436,105 @@ class Operator:
 
         return tokens
 
+    
+    def convert_assignment_operators(self, tokens:list[Token]) -> list[Token]:
+        i = 0
+        n = len(tokens)
+
+        assignment_operators = set(["+=", "/=", "*=", "<=", ">=", "!=", "%=", "^=", "&=", "|=", "~=", "-=", "&&=", "||=", "<<=", ">>="])
+
+        while i < n:
+            if tokens[i].token in assignment_operators:
+                the_operator = tokens[i].token.strip("=")
+                tokens[i].token = "="
+
+                before = []
+                j = i-1
+                while j >= 0:
+                    if tokens[j].token in [";", "{", "}"]:
+                        break
+                    before.append(tokens[j])
+                    j -= 1
+                j += 1
+
+                i += 1
+                for x in before:
+                    tokens.insert(i, x)
+                    i += 1
+                    n += 1
+                tokens.insert(i, Token(the_operator, tokens[i].line_number, tokens[i].filename))
+                i += 1
+                n += 1
+                tokens.insert(i, Token("(", tokens[i].line_number, tokens[i].filename))
+                i += 1
+                n += 1
+
+                j = i
+                while j < n:
+                    if tokens[j] == ";":
+                        j += 1
+                        break
+                    j += 1
+                j -= 1
+                tokens.insert(j, Token(")", tokens[j].line_number, tokens[j].filename))
+                n += 1
+            
+            i += 1
 
 
+        return tokens
 
+    def convert_unary_operators(self, tokens:list[Token]) -> list[Token]:
+        unary_operators = {"~":"bitnot", "!":"lognot", "&":"ref", "*":"deref", "-":"un-", "+":"un+"}
+
+        operators = set(["~", "!", "%", "^", "&", "|", "-", "+", "<", ">", "*", "==", "->", "&&", "||", ".", "(", "[", ">>", "<<", "=", ";", "{", "}"])
+
+        i = 0
+        n = len(tokens)
+        while i < n:
+            if tokens[i].token in unary_operators:
+                if i == 0 or (i > 0 and tokens[i-1].token in operators):
+                    # this is a unary operator
+                    tokens.insert(i, Token("0", tokens[i].line_number, tokens[i].filename))
+                    i += 1
+                    n += 1
+                    tokens[i].token = unary_operators[tokens[i].token]
+            
+            i += 1
+
+        return tokens
+
+
+    def convert_calls_and_accesses(self, tokens:list[Token]) -> list[Token]:
+        operators = set(["bitnot", "lognot", "deref", "ref", "un-", "un+", "%", "^", "&", "|", "-", "+", "<", ">", "*", "==", "->", "&&", "||", ".", "(", "[", ">>", "<<", "="])
+        # x[y] => x access (y)
+        # x(y) => x call (y)
+        # x() => x call(#NOTHING)
+        i = 0
+        n = len(tokens)
+        while i < n:
+            if len(tokens[i].token) > 0 and tokens[i].token[0] == '#':
+                # this is a variable
+                starting_index = i
+                if i + 1 < n and tokens[i+1] == "(":
+                    # this is a function call or definition
+                    # make sure the thing before the var is not $TYPE or $STRUCT x, $ENUM x, $UNION x
+                    if not (i > 0 and tokens[i-1] == "$TYPE" or i > 1 and tokens[i-2] in ["$STRUCT", "$ENUM", "$UNION"]):
+                        # this is a function call
+                        i += 1
+                        tokens.insert(i, Token("call", tokens[i].line_number, tokens[i].filename))
+                        i += 1
+                        n += 1
+                        i += 1
+                        if i < n and tokens[i] == ")":
+                            tokens.insert(i, Token("#NOTHING", tokens[i].line_number, tokens[i].filename))
+                            i += 1
+                            n += 1
+            i += 1
+        
+
+        return tokens
+
+
+if 0:
+    operators = set(["bitnot", "lognot", "deref", "ref", "un-", "un+", "%", "^", "&", "|", "-", "+", "<", ">", "*", "==", "->", "&&", "||", ".", "call", "access", ">>", "<<", "="])

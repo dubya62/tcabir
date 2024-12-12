@@ -1,16 +1,12 @@
 
-
-int testFunc(int b){
-    return b;
-}
-
+int testFunc();
 
 int main(int argc, char** argv){
-
-    testFunc(testFunc(argc)) + testFunc(4);
-
     int i = 0;
-    ++i;
+
+    if (i = testFunc()){
+
+    }
 
     return 0;
 }
