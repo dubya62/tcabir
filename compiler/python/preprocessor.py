@@ -54,7 +54,7 @@ class Preprocessor:
                     i += 1
 
                 if directive_tokens[0] == "define":
-                    second_start = 0
+                    second_start = 4
                     if len(directive_tokens) < 3:
                         error(directive_tokens[0], "Expected a token after define...")
                     if len(directive_tokens) >= 4:
@@ -85,7 +85,8 @@ class Preprocessor:
 
                             print(directive_tokens[second_start:])
 
-                    self.definitions[directive_tokens[2].token] = directive_tokens[second_start:]
+                    self.definitions[directive_tokens[2].token] = [x for x in directive_tokens[second_start:] if x.token != "DEFINE_SPACE"]
+
                     dbg(f"Added definition! {directive_tokens[2].token} {self.definitions[directive_tokens[2].token]}")
                 elif directive_tokens[0] == "undef":
                     if len(directive_tokens) == 1:

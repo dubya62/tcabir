@@ -1,14 +1,22 @@
 
-int testFunc();
+#include <stdio.h>
 
-int main(int argc, char** argv){
-    int i = 0;
+#ifndef NULL
+#define NULL 0
+#endif
 
-    if (i = testFunc()){
+typedef struct TestStruct{
+    int a;
+    int b;
+} TestStruct;
 
-    }
-
-    return 0;
+struct TestStruct* foo(int a){
+    return NULL;
 }
 
+int main(int argc, char** argv){
+    TestStruct test;
+    test.a = (unsigned int) 2;
+    test.b = 4;
+}
 

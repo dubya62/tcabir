@@ -62,6 +62,12 @@ class Simplifier:
                 new_starting_index = i + 1
                 new_ending_index = n
 
+                if i + 1 < n and tokens[i+1].token in ["{", ";"]:
+                    if tokens[i] == "struct":
+                        self.structures.append(tokens[i+1].token)
+                    else:
+                        self.unions.append(tokens[i+1].token)
+
                 while i < n:
                     if tokens[i] == "{":
                         break;
@@ -123,7 +129,6 @@ class Simplifier:
                     i += 1
                     continue
                 # convert this token to an enum token
-                print("HERE")
                 starting_index = i
                 braces = []
                 the_type = []
@@ -381,6 +386,10 @@ class Simplifier:
                         found = True
                         break
                 if not found:
+                    # throw an undefined error if the token before was not a type
+                    if not (i > 0 and tokens[i-1] == "$TYPE" or i > 1 and tokens[i-2].token in ["struct", "enum", "union"] or i > 0 and tokens[i-1].token in ["struct", "enum", "union", "$STRUCT", "$ENUM", "$UNION"] and i+1 < n and tokens[i+1].token in ["{", ";"] or tokens[i].token in self.structures or tokens[i].token in self.unions or i > 0 and tokens[i-1] == "."):
+                        if not (i + 1 < n and tokens[i+1] == "("):
+                            error(tokens[i], f"{tokens[i]} was used before it was defined...")
                     scopes[-1][tokens[i].token] = "#" + str(varnum)
                     tokens[i].token = scopes[-1][tokens[i].token]
                     varnum += 1

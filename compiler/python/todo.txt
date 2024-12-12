@@ -1,0 +1,10 @@
+
+Stuff that still needs to be handled:
+    labels and goto
+    ternary operators
+    compound literals
+    switch-case statements
+    continue statements
+    type checking (int + float => float)
+    memory checking
+    handling struct, union, and enum access

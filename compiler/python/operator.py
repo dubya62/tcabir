@@ -25,9 +25,43 @@ class Operator:
         # convert calls and accesses to use "call" and "access"
         self.tokens = self.convert_calls_and_accesses(self.tokens)
 
+        # convert type casts to use "cast"
+
         # break up lines that have more than one operation on them
 
+        # convert returns
+        # int foo(int x){return 3;}
+        # y = foo(3);
+        # =>
+        # void foo(int* z, int x){*z = 3;}
+        # foo(&y, 3);
 
+        # remove un+ and un-
+
+        # remove ->
+
+        # remove <=, >=, and !=
+
+        # make sure all if statements have an else clause
+
+        # remove || 
+
+        # remove &&
+
+        # remove lognot
+
+        # convert derefs to accesses
+
+        """
+        remaining tokens:
+        $TYPE, $STRUCT, $UNION, $ENUM
+        bitnot, ref, %, ^, &, |, -, +, <, >, *, ==, ., call, access, >>, <<, =, ,, cast
+        {, }, ;
+        if, else
+        goto, @x, #x
+        <char, int, float, and string literals>
+
+        """
 
         
     def combine_multi_token_operations(self, tokens:list[Token]) -> list[Token]:
@@ -326,7 +360,7 @@ class Operator:
                     if i + 1 < n and tokens[i+1] == "(":
                         # this is a function call or definition
                         # make sure the thing before the var is not $TYPE or $STRUCT x, $ENUM x, $UNION x
-                        if not (i > 0 and tokens[i-1] == "$TYPE" or i > 1 and tokens[i-2] in ["$STRUCT", "$ENUM", "$UNION"]):
+                        if not (i > 0 and tokens[i-1] == "$TYPE" or i > 1 and tokens[i-2] in ["$STRUCT", "$ENUM", "$UNION", "struct", "union", "enum"]):
                             # this is a function call
                             while starting_index >= 0:
                                 if tokens[starting_index].token in ["{", ";", "}"]:
@@ -441,7 +475,7 @@ class Operator:
         i = 0
         n = len(tokens)
 
-        assignment_operators = set(["+=", "/=", "*=", "<=", ">=", "!=", "%=", "^=", "&=", "|=", "~=", "-=", "&&=", "||=", "<<=", ">>="])
+        assignment_operators = set(["+=", "/=", "*=", "%=", "^=", "&=", "|=", "~=", "-=", "&&=", "||=", "<<=", ">>="])
 
         while i < n:
             if tokens[i].token in assignment_operators:
@@ -487,7 +521,7 @@ class Operator:
     def convert_unary_operators(self, tokens:list[Token]) -> list[Token]:
         unary_operators = {"~":"bitnot", "!":"lognot", "&":"ref", "*":"deref", "-":"un-", "+":"un+"}
 
-        operators = set(["~", "!", "%", "^", "&", "|", "-", "+", "<", ">", "*", "==", "->", "&&", "||", ".", "(", "[", ">>", "<<", "=", ";", "{", "}"])
+        operators = set(["~", "!", "%", "^", "&", "|", "-", "+", "<", ">", "*", "==", "->", "&&", "||", ".", "(", "[", ">>", "<<", "=", ";", "{", "}", "<=", ">=", "!="])
 
         i = 0
         n = len(tokens)
@@ -506,7 +540,7 @@ class Operator:
 
 
     def convert_calls_and_accesses(self, tokens:list[Token]) -> list[Token]:
-        operators = set(["bitnot", "lognot", "deref", "ref", "un-", "un+", "%", "^", "&", "|", "-", "+", "<", ">", "*", "==", "->", "&&", "||", ".", "(", "[", ">>", "<<", "="])
+        operators = set(["bitnot", "lognot", "deref", "ref", "un-", "un+", "%", "^", "&", "|", "-", "+", "<", ">", "*", "==", "->", "&&", "||", ".", "(", "[", ">>", "<<", "=", "!=", "<=", ">="])
         # x[y] => x access (y)
         # x(y) => x call (y)
         # x() => x call(#NOTHING)

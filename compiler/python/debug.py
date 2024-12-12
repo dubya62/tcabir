@@ -13,8 +13,8 @@ def panic(message:str):
     exit(1)
 
 def error(token:Token, message:str):
-    result = "Error: {token.filename}:{token.line_number} at token {token.token}\n\t{message}"
-    ERROR.append(result)
+    result = f"Error: {token.filename}:{token.line_number} at token {token.token}\n\t{message}"
+    ERRORS.append(result)
 
 def print_errors():
     dbg(f"{len(ERRORS)} NON-FATAL ERRORS ENCOUNTERED")
