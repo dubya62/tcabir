@@ -13,6 +13,17 @@ class Lexer:
         for token in self.tokens:
             token.filename = self.filename
 
+        # combine postfix and prefix operators while there are still spaces
+        i = 0
+        n = len(self.tokens)
+        while i < n:
+            if self.tokens[i].token in ["+", "-"]:
+                if i + 1 < n and self.tokens[i].token == self.tokens[i+1].token:
+                    self.tokens[i].token += self.tokens[i+1].token
+                    del self.tokens[i+1]
+                    n -= 1
+            i += 1
+
 
     def open_file(self, filename:str) -> str:
         dbg(f"Opening file {filename}...")

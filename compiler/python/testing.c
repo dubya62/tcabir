@@ -7,7 +7,10 @@ int testFunc(int b){
 
 int main(int argc, char** argv){
 
-    testFunc(2);
+    testFunc(testFunc(argc)) + testFunc(4);
+
+    int i = 0;
+    ++i;
 
     return 0;
 }

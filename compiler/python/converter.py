@@ -144,10 +144,10 @@ class Converter:
                 tokens.insert(i, Token("goto", tokens[i].line_number, tokens[i].filename))
                 i += 1
                 n += 1
-                tokens.insert(i, Token("@" + str(self.current_label, tokens[i].line_number, tokens[i].filename)))
+                tokens.insert(i, Token("@" + str(self.current_label), tokens[i].line_number, tokens[i].filename))
                 i += 1
                 n += 1
-                tokens.insert(i, Token(";", tokens[i].line_number, tokens[i].filname))
+                tokens.insert(i, Token(";", tokens[i].line_number, tokens[i].filename))
                 i += 1
                 n += 1
                 
