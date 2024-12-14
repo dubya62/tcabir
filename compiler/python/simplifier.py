@@ -53,6 +53,12 @@ class Simplifier:
 
                 # make sure this is a definition
                 if not (i + 1 < n and tokens[i+1] == "{") and not (i + 2 < n and tokens[i+2] == "{"):
+                    # this is a usage
+                    # TODO: make this consume * and & like normal
+                    new_token = types.Type([tokens[i], tokens[i+1]], tokens[i].line_number, tokens[i].filename)
+                    tokens[i] = new_token
+                    del tokens[i+1]
+                    n -= 1
                     i += 1
                     continue
                     
@@ -382,14 +388,12 @@ class Simplifier:
                 found = False
                 for j in range(len(scopes)-1, -1, -1):
                     if tokens[i].token in scopes[j]:
+                        # TODO: throw an redefinition error if the token before was a type
                         tokens[i].token = scopes[j][tokens[i].token]
                         found = True
                         break
                 if not found:
-                    # throw an undefined error if the token before was not a type
-                    if not (i > 0 and tokens[i-1] == "$TYPE" or i > 1 and tokens[i-2].token in ["struct", "enum", "union"] or i > 0 and tokens[i-1].token in ["struct", "enum", "union", "$STRUCT", "$ENUM", "$UNION"] and i+1 < n and tokens[i+1].token in ["{", ";"] or tokens[i].token in self.structures or tokens[i].token in self.unions or i > 0 and tokens[i-1] == "."):
-                        if not (i + 1 < n and tokens[i+1] == "("):
-                            error(tokens[i], f"{tokens[i]} was used before it was defined...")
+                    # TODO: throw an undefined error if the token before was not a type
                     scopes[-1][tokens[i].token] = "#" + str(varnum)
                     tokens[i].token = scopes[-1][tokens[i].token]
                     varnum += 1

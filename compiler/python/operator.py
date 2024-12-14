@@ -31,6 +31,9 @@ class Operator:
         # break up lines that have more than one operation on them
         self.tokens = self.break_multiple_operations(self.tokens)
 
+        # convert unary + and -
+        self.tokens = self.convert_unary_plus_and_minus(self.tokens)
+
         # convert returns
         # int foo(int x){return 3;}
         # y = foo(3);
@@ -589,12 +592,65 @@ class Operator:
         return tokens
 
 
+    def convert_unary_plus_and_minus(self, tokens:list[Token]) -> list[Token]:
+        i = 0
+        n = len(tokens)
+
+        while i < n:
+            if tokens[i] == "un-":
+                tokens[i].token = "-"
+            elif tokens[i] == "un+":
+                tokens[i].token = "+"
+            i += 1
+        
+
+        return tokens
+
+
     def break_multiple_operations(self, tokens:list[Token]) -> list[Token]:
-        operators = set(["bitnot", "lognot", "deref", "ref", "un-", "un+", "cast", "%", "^", "&", "|", "-", "+", "/", "<", ">", "*", "==", "->", "&&", "||", ".", "call", "access", ">>", "<<", "="])
+        operators = set(["bitnot", "lognot", "deref", "ref", "cast", "%", "^", "&", "|", "-", "+", "/", "<", ">", "*", "==", "->", "&&", "||", ".", "call", "access", ">>", "<<", "=", "&&", "||", ",", "!=", "<=", ">="])
+
+        precedences = {
+                "call":1, 
+                "access":2, 
+                ".":3, 
+                "->":4, 
+                "un+":5,
+                "un-":6,
+                "lognot":7,
+                "bitnot":8,
+                "cast":9,
+                "deref":10,
+                "ref":11,
+                "*":12, 
+                "/":13, 
+                "%":14, 
+                "+":15, 
+                "-":16, 
+                "<<":17, 
+                ">>":18, 
+                "<":19, 
+                "<=":20, 
+                ">":21, 
+                ">=":22,
+                "==":23, 
+                "!=":24, 
+                "&":25, 
+                "^":26, 
+                "|":27, 
+                "&&":28, 
+                "||":29, 
+                "&&":30, 
+                "||":31, 
+                "=":32,
+                ",":33, 
+                }
 
         i = 0
         n = len(tokens)
         while i < n:
+            if tokens[i].token in [""]:
+                pass
             
             i += 1
         
