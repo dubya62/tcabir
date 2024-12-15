@@ -184,7 +184,7 @@ class Simplifier:
 
         while i < n:
             if tokens[i].token not in builtin_types and tokens[i].token not in type_tokens:
-                if tokens[i].token in ["=", "{", ";", "(", ","]:
+                if tokens[i].token in ["=", "{", ";", "(", ",", ")"]:
                     break;
                 i += 1
                 continue

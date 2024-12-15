@@ -35,16 +35,14 @@ class Operator:
         self.token_types = ["NA"] * self.varnum
         self.tokens = self.remove_types(self.tokens)
 
-
         # convert unary + and -
         self.tokens = self.convert_unary_plus_and_minus(self.tokens)
 
+        # parse functions into objects
+        self.functions = self.parse_functions(self.tokens)
+
         # convert returns
-        # int foo(int x){return 3;}
-        # y = foo(3);
-        # =>
-        # void foo(int* z, int x){*z = 3;}
-        # foo(&y, 3);
+        self.tokens = self.convert_returns(self.tokens)
 
         # remove un+ and un-
 
@@ -106,10 +104,16 @@ class Operator:
                         continue
                     if tokens[i+1].token == tokens[i].token:
                         if i + 2 < n and tokens[i+2] == "=":
-                            tokens[i].token = tokens[i+1].token + tokens[i+2].token
+                            tokens[i].token += tokens[i+1].token + tokens[i+2].token
                             del tokens[i+1]
                             del tokens[i+1]
                             n -= 2
+                            i += 1
+                            continue
+                        else:
+                            tokens[i].token += tokens[i+1].token
+                            del tokens[i+1]
+                            n -= 1
                             i += 1
                             continue
             i += 1
@@ -302,13 +306,11 @@ class Operator:
                     # move to the line before
                     j = i
                     while j >= 0:
-                        print(tokens[j])
                         if tokens[j].token in ["{", ";", "}"]:
                             break
                         j -= 1
                     j += 1
 
-                    print(f"inside: {inside}")
 
                     for x in inside:
                         tokens.insert(j, x)
@@ -658,7 +660,39 @@ class Operator:
 
 
     def break_multiple_operations(self, tokens:list[Token]) -> list[Token]:
-        operators = set(["bitnot", "lognot", "deref", "ref", "cast", "%", "^", "&", "|", "-", "+", "/", "<", ">", "*", "==", "->", "&&", "||", ".", "call", "access", ">>", "<<", "=", "&&", "||", ",", "!=", "<=", ">="])
+        dbg("Breaking lines that have multiple operations...")
+        operators = set(["bitnot", "lognot", "deref", "ref", "cast", "%", "^", "&", "|", "-", "+", "/", "<", ">", "*", "==", "->", "&&", "||", ".", "call", "access", ">>", "<<", "=", "&&", "||", ",", "!=", "<=", ">=", "un+", "un-"])
+        
+        i = 0
+        n = len(tokens)
+        this_line = 0
+        line_start = 0
+        equals = 0
+        while i < n:
+            if tokens[i].token in [";", "{", "}"]:
+                if this_line > 1 or equals > 1:
+                    print(f"breaking ({this_line} ops): {tokens[line_start:i]}")
+                    tokens = self.break_line(tokens, line_start, i)
+                    i += len(tokens) - n
+                    n = len(tokens)
+                this_line = 0
+                equals = 0
+                line_start = i + 1
+            elif tokens[i].token in operators:
+                if tokens[i].token == "=":
+                    equals += 1
+                else:
+                    this_line += 1
+            
+            i += 1
+        
+        dbg("Finished breaking lines that have multiple operations!")
+
+        return tokens
+
+
+    def break_line(self, tokens:list[Token], line_start:int, line_end:int) -> int:
+        # break the given tokens using infix to postfix and convert them to include only 1 operation per line (not including =)
 
         precedences = {
                 "call":1, 
@@ -690,24 +724,124 @@ class Operator:
                 "|":27, 
                 "&&":28, 
                 "||":29, 
-                "&&":30, 
-                "||":31, 
-                "=":32,
-                ",":33, 
+                "=":30,
+                ",":31, 
                 }
 
+        associativity = {
+                "un++":1,
+                "un--":1,
+                "lognot":1,
+                "bitnot":1,
+                "cast":1,
+                "deref":1,
+                "ref":1,
+                }
+
+        the_line = tokens[line_start:line_end]
+        prefix = []
+        # convert from infix to postfix
+        if len(the_line) > 0 and the_line[0].token == "$TYPE":
+            prefix.append(the_line[0])
+            del the_line[0]
+
+        postfix = []
+        op_stack = []
+        for x in the_line:
+            # if curr token is operand, put it in the postfix
+            if x.token not in precedences and x.token not in ["(", ")"]:
+                postfix.append(x)
+
+            # if a (, push it to the stack
+            elif x == "(":
+                op_stack.append(x)
+            # if a ), pop from the stack until (
+            elif x == ")":
+                while True:
+                    if len(op_stack) == 0:
+                        fatal_error(x, "Mismatched (...")
+                    curr = op_stack.pop()
+                    if curr == "(":
+                        break
+                    postfix.append(curr)
+            else:
+                if x.token not in precedences:
+                    fatal_error(x, "Unrecognized operator...")
+                if len(op_stack) == 0 or op_stack[-1] == "(" or precedences[x.token] < precedences[op_stack[-1].token]:
+                    op_stack.append(x)
+                else:
+                    while len(op_stack) > 0 and op_stack[-1].token != "(":
+                        if x.token in associativity and op_stack[-1].token in associativity:
+                            break
+                        if precedences[x.token] <= precedences[op_stack[-1].token]:
+                            break
+                        postfix.append(op_stack.pop())
+                    op_stack.append(x)
+
+        while len(op_stack) > 0:
+            postfix.append(op_stack.pop())
+
+        print(f"POSTFIX: {postfix}")
+
+        # break the postfix expression into multiple lines
+        result = []
+        val_stack = []
+        for x in postfix:
+            # if a variable/number, push it onto the stack
+            if x.token not in precedences:
+                val_stack.append(x)
+            else:
+                if len(val_stack) < 2:
+                    fatal_error(x, "Operator does not have enough inputs...")
+                second = val_stack.pop()
+                first = val_stack.pop()
+                # op = x
+                if x.token == "=":
+                    for y in prefix:
+                        result.append(y)
+                else:
+                    result.append(Token("$INFER", x.line_number, x.filename))
+                    result.append(Token("#" + str(self.varnum), x.line_number, x.filename))
+                    result.append(Token("=", x.line_number, x.filename))
+                    val_stack.append(Token("#" + str(self.varnum), x.line_number, x.filename))
+                    self.varnum += 1
+
+                result.append(first)
+                result.append(x)
+                result.append(second)
+                result.append(Token(";", x.line_number, x.filename))
+
+
+        print(f"RESULT: {result}")
+
+        tokens = tokens[:line_start] + result + tokens[line_end+1:]
+
+        return tokens
+
+
+    def parse_functions(self, tokens:list[Token]) -> list[Function]:
+
+
+        return result
+
+
+    def convert_returns(self, tokens:list[Token]) -> list[Token]:
+        # int foo(int x){return 3;}
+        # y = foo(3);
+        # =>
+        # void foo(int* z, int x){*z = 3;}
+        # foo(&y, 3);
         i = 0
         n = len(tokens)
         while i < n:
-            if tokens[i].token in [""]:
-                pass
-            
             i += 1
-        
 
         return tokens
 
 
 
-if 0:
-    operators = set(["bitnot", "lognot", "deref", "ref", "un-", "un+", "cast", "%", "^", "&", "|", "-", "+", "/", "<", ">", "*", "==", "->", "&&", "||", ".", "call", "access", ">>", "<<", "="])
+
+
+
+
+
