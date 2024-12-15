@@ -31,6 +31,11 @@ class Operator:
         # break up lines that have more than one operation on them
         self.tokens = self.break_multiple_operations(self.tokens)
 
+        # Remove $TYPE, $STRUCT, $UNION, $ENUM, and $INFER variables
+        self.token_types = ["NA"] * self.varnum
+        self.tokens = self.remove_types(self.tokens)
+
+
         # convert unary + and -
         self.tokens = self.convert_unary_plus_and_minus(self.tokens)
 
@@ -157,6 +162,10 @@ class Operator:
                 tokens.insert(i, Token("#" + str(self.varnum), tokens[i].line_number, tokens[i].filename))
                 i += 1
                 n += 1
+                tokens.insert(starting_index, Token("$INFER", tokens[i].line_number, tokens[i].filename))
+                starting_index += 1
+                i += 1
+                n += 1
                 tokens.insert(starting_index, Token("#" + str(self.varnum), tokens[starting_index].line_number, tokens[starting_index].filename))
                 starting_index += 1
                 i += 1
@@ -200,6 +209,10 @@ class Operator:
                 tokens.insert(i, Token("#" + str(self.varnum), tokens[i].line_number, tokens[i].filename))
                 i += 1
                 n += 1
+                tokens.insert(starting_index, Token("$INFER", tokens[starting_index].line_number, tokens[starting_index].filename))
+                i += 1
+                n += 1
+                starting_index += 1
 
                 tokens.insert(starting_index, Token("#" + str(self.varnum), tokens[starting_index].line_number, tokens[starting_index].filename))
                 i += 1
@@ -405,6 +418,10 @@ class Operator:
                                             tokens.insert(i, Token("#" + str(self.varnum), tokens[i].line_number, tokens[i].filename))
                                             i += 2
                                             n += 1
+                                            tokens.insert(starting_index, Token("$INFER", tokens[starting_index].line_number, tokens[starting_index].filename))
+                                            starting_index += 1
+                                            i += 1
+                                            n += 1
 
                                             tokens.insert(starting_index, Token("#" + str(self.varnum), tokens[starting_index].line_number, tokens[starting_index].filename))
                                             starting_index += 1
@@ -603,6 +620,39 @@ class Operator:
                 tokens[i].token = "+"
             i += 1
         
+
+        return tokens
+
+
+    def remove_types(self, tokens:list[Token]) -> list[Token]:
+        i = 0
+        n = len(tokens)
+
+        while i < n:
+            if tokens[i] == "$TYPE":
+                if i + 1 < n and len(tokens[i+1].token) > 0 and tokens[i+1].token[0] == "#":
+                    varnum = tokens[i+1].token[1:]
+                    try:
+                        varnum = int(varnum)
+                    except:
+                        i += 1
+                        continue
+                    if varnum >= len(self.token_types):
+                        fatal_error(tokens[i+1], "There is a serious problem with the compiler. Report this...")
+                    self.token_types[varnum] = tokens[i].types
+                    del tokens[i]
+                    n -= 1
+                    continue
+            elif tokens[i] == "$STRUCT":
+                pass
+            elif tokens[i] == "$UNION":
+                pass
+            elif tokens[i] == "$INFER":
+                pass
+
+            i += 1
+
+        print(f"Token types: {self.token_types}")
 
         return tokens
 

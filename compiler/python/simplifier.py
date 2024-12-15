@@ -55,10 +55,11 @@ class Simplifier:
                 if not (i + 1 < n and tokens[i+1] == "{") and not (i + 2 < n and tokens[i+2] == "{"):
                     # this is a usage
                     # TODO: make this consume * and & like normal
-                    new_token = types.Type([tokens[i], tokens[i+1]], tokens[i].line_number, tokens[i].filename)
-                    tokens[i] = new_token
-                    del tokens[i+1]
-                    n -= 1
+                    new_builtin_types = builtin_types
+                    new_builtin_types.add(tokens[i].token)
+                    new_builtin_types.add(tokens[i+1].token)
+                    n_difference = self.replace_type(tokens, i, new_builtin_types)
+                    n += n_difference
                     i += 1
                     continue
                     
