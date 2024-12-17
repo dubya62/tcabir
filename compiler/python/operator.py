@@ -3,11 +3,13 @@ from debug import *
 from token import *
 
 from types import *
+import standard
 
 class Operator:
-    def __init__(self, tokens:list[Token], varnum:int):
+    def __init__(self, tokens:list[Token], varnum:int, variable_names):
         self.tokens = tokens
         self.varnum = varnum
+        self.variable_names = variable_names
 
         # combine multi-token operations
         self.tokens = self.combine_multi_token_operations(self.tokens)
@@ -40,13 +42,19 @@ class Operator:
         # convert unary + and -
         self.tokens = self.convert_unary_plus_and_minus(self.tokens)
 
-        # parse functions into objects
-        self.functions = self.parse_functions(self.tokens)
+        # parse structures, unions, enums, and typedefs into objects
+        self.functions = []
+        self.structures = []
+        self.unions = []
+        self.enums = []
+        self.typedefs = []
+        self.tokens = self.parse_structs_unions_enums_and_typedefs(self.tokens)
 
         # convert returns
         self.tokens = self.convert_returns(self.tokens)
 
         # remove un+ and un-
+        self.tokens = self.remove_unary_operators(self.tokens)
 
         # remove ->
 
@@ -64,7 +72,7 @@ class Operator:
 
         """
         remaining tokens:
-        $TYPE, $STRUCT, $UNION, $ENUM
+        $INFER, $TYPE, $ENUM, $STRUCTURE_DEFINITION, $UNION_DEFINITION, $TYPEDEF_DEFINITION
         bitnot, ref, %, ^, &, |, -, +, <, >, *, /, ==, ., call, access, >>, <<, =, ,, cast
         {, }, ;
         if, else
@@ -603,6 +611,9 @@ class Operator:
         while i < n:
             if tokens[i] == "$TYPE":
                 if i > 0 and i + 1 < n and tokens[i-1] == "(" and tokens[i+1] == ")":
+                    if i + 2 < n and tokens[i+2].token in ["{", ";"]:
+                        i += 1
+                        continue
                     del tokens[i-1]
                     del tokens[i]
                     tokens.insert(i, Token("cast", tokens[i].line_number, tokens[i].filename))
@@ -821,9 +832,119 @@ class Operator:
         return tokens
 
 
-    def parse_functions(self, tokens:list[Token]) -> list[Function]:
-        result = []
-        return result
+    def parse_structs_unions_enums_and_typedefs(self, tokens:list[Token]):
+        i = 0
+        n = len(tokens)
+
+        # handle structs and unions
+        while i < n:
+            if tokens[i] == "$STRUCT" or tokens[i] == "$UNION":
+                # get the name
+                the_name = None
+                if i + 1 < n and len(tokens[i+1].token) > 0 and tokens[i+1].token[0] == "#":
+                    the_name = self.variable_names[tokens[i+1].token]
+                    del tokens[i+1]
+                    n -= 1
+
+                # TODO: finish structs/unions
+                member_names = []
+                member_types = []
+
+                if tokens[i] == "$STRUCT":
+                    the_struct = standard.Structure(the_name, member_names, member_types)
+                    self.structures.append(the_struct)
+                else:
+                    the_struct = standard.Union(the_name, member_names, member_types)
+                    self.unions.append(the_struct)
+                tokens[i] = the_struct
+            elif tokens[i] == "$ENUM":
+                the_name = None
+                if i + 1 < n and len(tokens[i+1].token) > 0 and tokens[i+1].token[0] == "#":
+                    the_name = self.variable_names[tokens[i+1].token]
+                    del tokens[i+1]
+                    n -= 1
+                # TODO: finish enums
+                member_names = []
+                member_values = []
+
+                the_enum = standard.Enum(the_name, member_names, member_values)
+                self.enums.append(the_enum)
+                tokens[i] = the_enum
+            i += 1
+
+        # get funcion definitions now
+        i = 0
+        n = len(tokens)
+        while i < n:
+            # variable followed by ( is a function
+            if i + 1 < n and len(tokens[i].token) > 0:
+                if tokens[i].token[0] == "#" and tokens[i+1] == "(":
+                    starting_index = i
+                    # this is a function def
+                    the_name = self.variable_names[tokens[i].token]
+                    return_type = standard.Type(self.token_types[int(tokens[i].token[1:])])
+
+                    arg_types = []
+                    arg_constraints = []
+                    i += 1
+                    parens = []
+
+                    args = [[]]
+                    while i < n:
+                        if tokens[i] == "(":
+                            parens.append("(")
+                        elif tokens[i] == ")":
+                            parens.pop()
+                            if len(parens) == 0:
+                                break
+                        elif tokens[i] == ",":
+                            args.append([])
+                            pass
+                        else:
+                            args[-1].append(tokens[i])
+                        i += 1
+
+                    # if it ends in );, ignore this function
+                    declaration = False
+
+                    print(args)
+                    if len(args) == 1 and len(args[0]) == 1 and args[0][0] == "$TYPE" and len(args[0][0].types) == 1 and args[0][0].types[0] == "void":
+                        arg_types = [self.variable_types[x] for x in args]
+                        # TODO: create function constraints
+                        arg_constraints = []
+                    else:
+                        pass
+
+                    
+                    func_tokens = []
+                    if i + 1 >= n or tokens[i+1] == ";":
+                        declaration = True
+                    elif tokens[i+1] == "{":
+                        i += 2
+                        braces = 1
+                        while i < n:
+                            if tokens[i] == "{":
+                                braces += 1
+                            elif tokens[i] == "}":
+                                braces -= 1
+                                if braces == 0:
+                                    break
+                            func_tokens.append(tokens[i])
+                            del tokens[i]
+                            n -= 1
+
+                    while i > starting_index:
+                        del tokens[starting_index]
+                        i -= 1
+                        n -= 1
+                    the_function = standard.Function(the_name, return_type, arg_types, arg_constraints, func_tokens, declaration)
+                    tokens[i] = the_function
+                    self.functions.append(the_function)
+            
+            i += 1
+
+        return tokens
+
 
 
     def convert_returns(self, tokens:list[Token]) -> list[Token]:
@@ -840,6 +961,16 @@ class Operator:
         return tokens
 
 
+    def remove_unary_operators(self, tokens:list[Token]) -> list[Token]:
+        i = 0
+        n = len(tokens)
+        while i < n:
+            if tokens[i] == "un+":
+                tokens[i].token = "+"
+            elif tokens[i] == "un-":
+                tokens[i].token = "-"
+            i += 1
+        return tokens
 
 
 

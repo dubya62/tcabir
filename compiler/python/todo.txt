@@ -8,3 +8,4 @@ Stuff that still needs to be handled:
     type checking (int + float => float)
     memory checking
     handling struct, union, and enum access
+    fixing handling typedefs

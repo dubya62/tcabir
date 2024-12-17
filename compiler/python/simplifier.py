@@ -27,6 +27,7 @@ class Simplifier:
         self.tokens = self.create_extra_scopes(self.tokens)
 
         # generalize variables
+        self.definitions = {}
         self.tokens = self.generalize_variables(self.tokens)
 
         # fix function scoping
@@ -359,7 +360,7 @@ class Simplifier:
         i = 0
         n = len(tokens)
 
-        builtins = set(["++", "--", "*", "+", "-", "(", ")", ".", "[", "]", "{", "}", "<", ">", ",", "/", "=", "|", "%", "#", "!", "~", "^", "&", ";", ":", "?", "return", "break", "void", "if", "else", "for", "while", "switch", "case", "short", "long", "const", "unsigned", "struct", "signed", "sizeof", "continue", "auto", "register", "static", "$STRUCT", "$UNION", "$ENUM", "$TYPE", "#FIXFUNC"])
+        builtins = set(["++", "--", "*", "+", "-", "(", ")", ".", "[", "]", "{", "}", "<", ">", ",", "/", "=", "|", "%", "#", "!", "~", "^", "&", ";", ":", "?", "return", "break", "void", "if", "else", "for", "while", "switch", "case", "short", "long", "const", "unsigned", "struct", "signed", "sizeof", "continue", "auto", "register", "static", "$STRUCT", "$UNION", "$ENUM", "$TYPE", "#FIXFUNC", "goto"])
 
         scopes = [{}]
 
@@ -395,6 +396,7 @@ class Simplifier:
                         break
                 if not found:
                     # TODO: throw an undefined error if the token before was not a type
+                    self.definitions["#" + str(varnum)] = tokens[i].token
                     scopes[-1][tokens[i].token] = "#" + str(varnum)
                     tokens[i].token = scopes[-1][tokens[i].token]
                     varnum += 1

@@ -2,9 +2,6 @@
 Class Name
     varname : type - example
 
-
-
-
 Type
     type : list[str] - ["char", "*"]
 

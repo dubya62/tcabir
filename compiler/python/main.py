@@ -61,6 +61,7 @@ class Main:
         dbg("Performing Variable Simplification...")
         the_simplifier = simplifier.Simplifier(tokens)
         tokens = the_simplifier.tokens
+        variable_names = the_simplifier.definitions
         final_varnum = the_simplifier.varnum
 
         dbg("Finished Performing Variable Simplification!")
@@ -80,7 +81,7 @@ class Main:
         # operator
         dbg("##############################")
         dbg("Performing Operator Conversion...")
-        the_operator = operator.Operator(tokens, final_varnum)
+        the_operator = operator.Operator(tokens, final_varnum, variable_names)
         tokens = the_operator.tokens
 
         dbg("Finished Performing Operator Conversion!")

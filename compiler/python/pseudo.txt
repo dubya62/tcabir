@@ -1,0 +1,23 @@
+
+Given a Function object
+
+Throw an error if any of the following happen:
+    - The right operand of a division operation can be 0
+    - The right operand of a modulo operation can be 0
+    - The result of an operation is stored in a signed variable (or used signed arithmetic) and overflows 
+    - Accessing memory that was not first allocated (out of bounds or uninitialized) (using * or . operator)
+
+
+PseudoCode:
+
+Accept a Function object as an arugment
+Accept the type table as an argument (attaches types to variable names)
+Create a list/dictionary to keep track of the size of arrays
+loop through the tokens member of the Function (the instructions):
+    If a pointer's value is changed, change its array size accordingly
+    If the * or . operator is used on an invalid index/memory address: panic("Error message!")
+    If currentToken == / and nextToken == 0: panic("No division by 0!")
+    If currentToken == % and nextToken == 0: panic("No modulo by 0!")
+    # idk how to do integer overflow yet. don't worry about it
+    
+
