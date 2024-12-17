@@ -2,6 +2,8 @@
 from debug import *
 from token import *
 
+from types import *
+
 class Operator:
     def __init__(self, tokens:list[Token], varnum:int):
         self.tokens = tokens
@@ -820,8 +822,7 @@ class Operator:
 
 
     def parse_functions(self, tokens:list[Token]) -> list[Function]:
-
-
+        result = []
         return result
 
 

@@ -1,0 +1,45 @@
+
+Class Name
+    varname : type - example
+
+
+
+
+Type
+    type : list[str] - ["char", "*"]
+
+Range
+    min_val : float|int - 0
+    max_val : float|int - 12
+    step : float|int - 1
+
+Constraint
+    values : list[Range|int|str|float] - [2, 4, 6, 8]
+
+Function
+    name : str - "main"
+    return type : Type
+    input types : list[Type]
+    argument constraints : list[Constraint]
+    tokens (inner content) : list[str] - ["printf", "(", '"Hello, world!\n"', ")", ";"]
+
+Structure
+    name : str - "TestStruct"
+    member names : list[str] - ["member1", "member2"]
+    member types : list[Type]
+
+Union
+    name : str - "TestUnion"
+    member names : list[str] - ["member1", "member2"]
+    member types : list[Type]
+
+Enum
+    name : str - "TestEnum"
+    member names : list[str] - ["VAL1", "VAL2"]
+    member values : list[int] - [1, 2]
+
+Typedef
+    first type : Type
+    second type : Type
+
+
