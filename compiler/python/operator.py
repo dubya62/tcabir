@@ -50,19 +50,23 @@ class Operator:
         self.typedefs = []
         self.tokens = self.parse_structs_unions_enums_and_typedefs(self.tokens)
 
-        # convert returns
+        # TODO: convert returns
         self.tokens = self.convert_returns(self.tokens)
 
         # remove un+ and un-
         self.tokens = self.remove_unary_operators(self.tokens)
 
         # remove ->
+        self.remove_arrows()
 
         # remove <=, >=, and !=
+        self.remove_or_equal()
 
         # make sure all if statements have an else clause
+        self.create_else_clauses()
 
         # remove || 
+        self.remove_logical_or()
 
         # remove &&
 
@@ -76,7 +80,7 @@ class Operator:
         bitnot, ref, %, ^, &, |, -, +, <, >, *, /, ==, ., call, access, >>, <<, =, ,, cast
         {, }, ;
         if, else
-        goto, @x, #x
+        goto, @x, #x, :
         <char, int, float, and string literals>
 
         """
@@ -973,6 +977,188 @@ class Operator:
         return tokens
 
 
+    def remove_arrows(self):
+        for func in self.functions:
+            tokens = func.tokens
+            i = 0
+            n = len(tokens)
+            while i < n:
+                if tokens[i] == "->":
+                    tokens[i].token = ")"
+                    i += 1
+                    tokens.insert(i, Token(".", tokens[i].line_number, tokens[i].filename))
+                    n += 1
+                    parens = 0
+                    return_index = i
+                    while i > 0:
+                        if tokens[i].token in ["=", "{", "}", ";"]:
+                            i += 1
+                            break
+                        i -= 1
+                    tokens.insert(i, Token("(", tokens[i].line_number, tokens[i].filename))
+                    i += 1
+                    n += 1
+                    tokens.insert(i, Token("0", tokens[i].line_number, tokens[i].filename))
+                    i += 1
+                    n += 1
+                    tokens.insert(i, Token("deref", tokens[i].line_number, tokens[i].filename))
+                    n += 1
+                    i = return_index + 3
+                    continue
+                i += 1
+            func.tokens = self.break_multiple_operations(func.tokens)
+
+
+    def remove_or_equal(self):
+        for func in self.functions:
+            tokens = func.tokens
+            # remove <=, >=, and !=
+            # x <= y 
+            # 0 lognot (x > y)
+            i = 0
+            n = len(tokens)
+            while i < n:
+                replace = False
+                if tokens[i] == "<=":
+                    replace = True
+                    operator = ">"
+                elif tokens[i] == ">=":
+                    replace = True
+                    operator = "<"
+                elif tokens[i] == "!=":
+                    replace = True
+                    operator = "=="
+
+                if replace:
+                    tokens[i].token = operator
+                    starting_index = i
+                    while i < n:
+                        if tokens[i] == ";":
+                            break
+                        i += 1
+                    tokens.insert(i, Token(")", tokens[i].line_number, tokens[i].filename))
+                    n += 1
+                    i = starting_index
+                    while i > 0:
+                        if tokens[i].token in ["=", "{", "}", ";"]:
+                            i += 1
+                            break
+                        i -= 1
+                    tokens.insert(i, Token("0", tokens[i].line_number, tokens[i].filename))
+                    i += 1
+                    n += 1
+                    tokens.insert(i, Token("lognot", tokens[i].line_number, tokens[i].filename))
+                    i += 1
+                    n += 1
+                    tokens.insert(i, Token("(", tokens[i].line_number, tokens[i].filename))
+                    i += 1
+                    n += 1
+
+                i += 1
+            func.tokens = self.break_multiple_operations(func.tokens)
+
+
+    def create_else_clauses(self):
+        for func in self.functions:
+            tokens = func.tokens
+            i = 0
+            n = len(tokens)
+            while i < n:
+                if tokens[i] == "if":
+                    braces = 0
+                    while i < n:
+                        if tokens[i] == "{":
+                            braces += 1
+                        elif tokens[i] == "}":
+                            braces -= 1
+                            if braces == 0:
+                                i += 1
+                                break
+                        i += 1
+                    if i >= n or tokens[i].token != "else":
+                        tokens.insert(i, Token("else", tokens[i].line_number, tokens[i].filename))
+                        i += 1
+                        n += 1
+                        tokens.insert(i, Token("{", tokens[i].line_number, tokens[i].filename))
+                        i += 1
+                        n += 1
+                        tokens.insert(i, Token("}", tokens[i].line_number, tokens[i].filename))
+                        i += 1
+                        n += 1
+                
+                i += 1
+            func.tokens = self.break_multiple_operations(func.tokens)
+
+
+    def remove_logical_or(self):
+
+        # x || y
+        # !(!(x)&&!(y))
+
+        for func in self.functions:
+            tokens = func.tokens
+            i = 0
+            n = len(tokens)
+            while i < n:
+                if tokens[i] == "||":
+                    starting_index = i
+                    tokens[i].token = "&&"
+                    i += 1
+                    tokens.insert(i, Token("0", tokens[i].line_number, tokens[i].filename))
+                    i += 1
+                    n += 1
+                    tokens.insert(i, Token("lognot", tokens[i].line_number, tokens[i].filename))
+                    i += 1
+                    n += 1
+                    tokens.insert(i, Token("(", tokens[i].line_number, tokens[i].filename))
+                    i += 1
+                    n += 1
+                    while i < n:
+                        if tokens[i] == ";":
+                            break
+                        i += 1
+                    pass
+                    tokens.insert(i, Token(")", tokens[i].line_number, tokens[i].filename))
+                    i += 1
+                    n += 1
+                    tokens.insert(i, Token(")", tokens[i].line_number, tokens[i].filename))
+                    i += 1
+                    n += 1
+
+                    i = starting_index
+                    tokens.insert(i, Token(")", tokens[i].line_number, tokens[i].filename))
+                    n += 1
+                    while i > 0:
+                        if tokens[i].token in ["=", "{", "}", ";"]:
+                            i += 1
+                            break
+                        i -= 1
+                    tokens.insert(i, Token("0", tokens[i].line_number, tokens[i].filename))
+                    i += 1
+                    n += 1
+                    tokens.insert(i, Token("lognot", tokens[i].line_number, tokens[i].filename))
+                    i += 1
+                    n += 1
+                    tokens.insert(i, Token("(", tokens[i].line_number, tokens[i].filename))
+                    i += 1
+                    n += 1
+                    tokens.insert(i, Token("0", tokens[i].line_number, tokens[i].filename))
+                    i += 1
+                    n += 1
+                    tokens.insert(i, Token("lognot", tokens[i].line_number, tokens[i].filename))
+                    i += 1
+                    n += 1
+                    tokens.insert(i, Token("(", tokens[i].line_number, tokens[i].filename))
+                    i += 1
+                    n += 1
+
+
+                i += 1
+
+
+            func.tokens = self.break_multiple_operations(func.tokens)
+        
+        pass
 
 
 
